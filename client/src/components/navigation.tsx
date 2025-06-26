@@ -87,22 +87,22 @@ export default function Navigation() {
             {/* User Avatar */}
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-apple-blue to-apple-indigo flex items-center justify-center overflow-hidden">
-                {user?.profileImageUrl ? (
+                {user && typeof user === 'object' && 'profileImageUrl' in user && user.profileImageUrl ? (
                   <img
-                    src={user.profileImageUrl}
+                    src={user.profileImageUrl as string}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <i className="fas fa-user text-white text-sm"></i>
+                  <User className="text-white" size={16} />
                 )}
               </div>
               <div className="hidden md:block">
                 <div className="text-sm font-medium text-text-primary">
-                  {user?.firstName || user?.email || "User"}
+                  User
                 </div>
                 <div className="text-xs text-text-tertiary">
-                  {user?.email}
+                  {user && typeof user === 'object' && 'id' in user ? `ID: ${user.id}` : "Authenticated"}
                 </div>
               </div>
             </div>
@@ -114,7 +114,7 @@ export default function Navigation() {
               onClick={() => window.location.href = '/api/logout'}
               className="text-text-secondary hover:text-apple-red"
             >
-              <i className="fas fa-sign-out-alt"></i>
+              <LogOut size={16} />
             </Button>
           </div>
         </div>
@@ -123,22 +123,25 @@ export default function Navigation() {
         {isMobileMenuOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-glass">
             <div className="flex flex-col space-y-2">
-              {navigationItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start px-4 py-3 rounded-xl transition-colors ${
-                      isActive(item.href)
-                        ? "bg-apple-blue/20 text-apple-blue"
-                        : "text-text-secondary hover:text-text-primary hover:bg-white/10"
-                    }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <i className={`${item.icon} mr-3 text-sm`}></i>
-                    {item.label}
-                  </Button>
-                </Link>
-              ))}
+              {navigationItems.map((item) => {
+                const IconComponent = item.icon;
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start px-4 py-3 rounded-xl transition-colors ${
+                        isActive(item.href)
+                          ? "bg-apple-blue/20 text-apple-blue"
+                          : "text-text-secondary hover:text-text-primary hover:bg-white/10"
+                      }`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <IconComponent size={16} className="mr-3" />
+                      {item.label}
+                    </Button>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
