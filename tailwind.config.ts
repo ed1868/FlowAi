@@ -51,6 +51,26 @@ export default {
           "4": "var(--chart-4)",
           "5": "var(--chart-5)",
         },
+        // Apple-inspired colors
+        "apple-blue": "var(--apple-blue)",
+        "apple-indigo": "var(--apple-indigo)",
+        "apple-orange": "var(--apple-orange)",
+        "apple-green": "var(--apple-green)",
+        "apple-red": "var(--apple-red)",
+        "apple-purple": "var(--apple-purple)",
+        "apple-pink": "var(--apple-pink)",
+        "apple-yellow": "var(--apple-yellow)",
+        // Dark theme colors
+        "dark-1": "var(--dark-1)",
+        "dark-2": "var(--dark-2)",
+        "dark-3": "var(--dark-3)",
+        "text-primary": "var(--text-primary)",
+        "text-secondary": "var(--text-secondary)",
+        "text-tertiary": "var(--text-tertiary)",
+        // Glass effects
+        "glass": "var(--glass)",
+        "glass-light": "var(--glass-light)",
+        "glass-border": "var(--glass-border)",
         sidebar: {
           DEFAULT: "var(--sidebar-background)",
           foreground: "var(--sidebar-foreground)",

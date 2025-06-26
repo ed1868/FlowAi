@@ -128,17 +128,32 @@ export class DatabaseStorage implements IStorage {
 
   // Journal operations
   async createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry> {
+    const insertData = {
+      userId: entry.userId,
+      content: entry.content,
+      title: entry.title || null,
+      mood: entry.mood || null,
+      tags: entry.tags || null,
+    };
+    
     const [newEntry] = await db
       .insert(journalEntries)
-      .values(entry)
+      .values(insertData)
       .returning();
     return newEntry;
   }
 
   async updateJournalEntry(entryId: number, userId: string, updateData: Partial<InsertJournalEntry>): Promise<JournalEntry | undefined> {
+    const setData: any = { updatedAt: new Date() };
+    
+    if (updateData.content !== undefined) setData.content = updateData.content;
+    if (updateData.title !== undefined) setData.title = updateData.title;
+    if (updateData.mood !== undefined) setData.mood = updateData.mood;
+    if (updateData.tags !== undefined) setData.tags = updateData.tags;
+    
     const [updatedEntry] = await db
       .update(journalEntries)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set(setData)
       .where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, userId)))
       .returning();
     return updatedEntry;
@@ -148,7 +163,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(journalEntries)
       .where(and(eq(journalEntries.id, entryId), eq(journalEntries.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getUserJournalEntries(userId: string): Promise<JournalEntry[]> {
@@ -180,7 +195,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(voiceNotes)
       .where(and(eq(voiceNotes.id, noteId), eq(voiceNotes.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getUserVoiceNotes(userId: string): Promise<VoiceNote[]> {
@@ -213,7 +228,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(habits)
       .where(and(eq(habits.id, habitId), eq(habits.userId, userId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getUserHabits(userId: string): Promise<Habit[]> {
