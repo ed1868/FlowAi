@@ -1,0 +1,154 @@
+play-by-play on building a little web app—powered by React on the front end and Node/Express on the back end—that helps you lock in those deep-work sprints, micro-check-ins, journaling, voice-notes, and reset-kit rituals. Think of it as your own kitchen-style productivity station.
+
+1. Sketch your feature set & data model
+Timer module: start/pause/reset 90-min sprints + break reminders
+
+Check-in scheduler: quick pop-up or notif at set times
+
+Journaling: text entries + timestamp
+
+Voice-note upload: record in browser, save as audio file
+
+Reset kit actions: list of rituals with “Done” buttons
+
+User accounts (optional): to persist across devices
+
+Draw boxes and arrows on a whiteboard or Miro—what data each feature needs (e.g. a “Session” object with start, end, type).
+
+2. Bootstrap your repo & environments
+Git init (or clone an org template)
+
+Create two folders: /server and /client
+
+In /server, run npm init -y
+
+In /client, use Vite or CRA:
+
+bash
+Copy
+Edit
+# example with Vite
+cd client
+npm create vite@latest . --template react
+npm install
+3. Build the Node/Express API
+Install deps:
+
+bash
+Copy
+Edit
+cd server
+npm install express mongoose dotenv cors multer
+Wire up server.js:
+
+js
+Copy
+Edit
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config();
+const app = express();
+app.use(cors(), express.json());
+// routes go here
+app.listen(process.env.PORT || 4000, ()=> console.log('API live'));
+Connect to MongoDB (or your DB of choice) with Mongoose in a separate db.js.
+
+Define models (Session, CheckIn, JournalEntry, VoiceNote, User).
+
+4. Create your REST endpoints
+Sessions: POST /api/sessions (start), PATCH /api/sessions/:id (end), GET /api/sessions
+
+CheckIns: POST /api/checkins, GET /api/checkins
+
+Journal: CRUD /api/journal
+
+VoiceNotes: file upload with Multer to /uploads, endpoints to POST /api/voice and GET /api/voice
+
+ResetKit: static JSON on the client or store state in DB
+
+Test each route with Postman or Insomnia.
+
+5. Secure & structure your API
+Use Helmet, express-rate-limit, and cors whitelisting
+
+If you need auth, drop in JWT: npm install jsonwebtoken bcryptjs
+
+Create an auth middleware to protect routes
+
+6. Spin up your React front end
+Install core libs:
+
+bash
+Copy
+Edit
+cd client
+npm install axios react-router-dom
+Set up folder structure:
+
+swift
+Copy
+Edit
+src/
+  components/ Timer/, CheckIn/, Journal/, VoiceNote/, ResetKit/
+  pages/ Dashboard.jsx, Login.jsx, Signup.jsx
+  services/ api.js
+  App.jsx
+  index.jsx
+Configure routing in App.jsx with React Router.
+
+7. Build your main components
+Timer component:
+
+use useState for minutes/seconds
+
+useEffect + setInterval to tick down
+
+on “session end,” call your API to save the record
+
+CheckIn scheduler:
+
+let user pick times (HTML <input type="time">)
+
+schedule with setTimeout or use the Notifications API for browser pops
+
+save schedules via POST /api/checkins
+
+Journal: simple textarea + “Save” button → POST /api/journal
+
+VoiceNote: use the MediaRecorder API to record; upload blob via FormData → POST /api/voice
+
+ResetKit: render a static list of actions (e.g. “Stretch,” “Cold splash,” “Play hype track”), each with a checkbox + timestamp save (optional)
+
+8. Wire up API calls
+In services/api.js, export functions like getSessions(), createSession(), etc., using Axios. Then call those in your component event handlers (e.g. onStart, onStop, onSave).
+
+9. Style & polish
+Use your go-to: Tailwind, Chakra UI, Material, whatever vibes with you
+
+Make the layout mobile-friendly—charts and timers should scale
+
+Add a simple Navbar with links to Dashboard, Journal, etc.
+
+10. Add state management (optional)
+For a small app, Context + useReducer is enough
+
+For bigger scale, drop in Redux Toolkit
+
+11. Testing
+Back end: Jest + Supertest for your endpoints
+
+Front end: React Testing Library for components
+
+12. Deployment
+Server: Deploy to Heroku, Render, or Fly.io
+
+Client: Vercel or Netlify—point to your build folder, set env vars for your API URL
+
+Ensure CORS is configured on the live API.
+
+13. Monitor & iterate
+Hook up simple analytics (e.g. Plausible, Google Analytics) to see how often you hit breaks, journaling, etc.
+
+Use error tracking (Sentry) to catch any crashes.
+
