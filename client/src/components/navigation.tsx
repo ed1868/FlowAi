@@ -2,6 +2,19 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { 
+  BarChart3, 
+  Clock, 
+  PenTool, 
+  Mic, 
+  TrendingUp, 
+  Zap, 
+  User, 
+  LogOut, 
+  Menu, 
+  X,
+  Home
+} from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
@@ -9,12 +22,12 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigationItems = [
-    { href: "/", label: "Dashboard", icon: "fas fa-tachometer-alt" },
-    { href: "/timer", label: "Timer", icon: "fas fa-clock" },
-    { href: "/journal", label: "Journal", icon: "fas fa-pen-fancy" },
-    { href: "/voice-notes", label: "Voice Notes", icon: "fas fa-microphone" },
-    { href: "/habits", label: "Habits", icon: "fas fa-chart-line" },
-    { href: "/analytics", label: "Analytics", icon: "fas fa-analytics" },
+    { href: "/", label: "Dashboard", icon: Home },
+    { href: "/timer", label: "Timer", icon: Clock },
+    { href: "/journal", label: "Journal", icon: PenTool },
+    { href: "/voice-notes", label: "Voice Notes", icon: Mic },
+    { href: "/habits", label: "Habits", icon: TrendingUp },
+    { href: "/analytics", label: "Analytics", icon: BarChart3 },
   ];
 
   const isActive = (href: string) => {
@@ -31,7 +44,7 @@ export default function Navigation() {
           <Link href="/">
             <div className="flex items-center space-x-2 cursor-pointer">
               <div className="w-8 h-8 bg-gradient-to-br from-apple-blue to-apple-indigo rounded-lg flex items-center justify-center">
-                <i className="fas fa-bolt text-white text-sm"></i>
+                <Zap className="text-white" size={16} />
               </div>
               <span className="text-xl font-semibold gradient-text">Flow</span>
             </div>
@@ -39,21 +52,24 @@ export default function Navigation() {
           
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-1">
-            {navigationItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant="ghost"
-                  className={`px-4 py-2 rounded-xl transition-colors ${
-                    isActive(item.href)
-                      ? "bg-apple-blue/20 text-apple-blue"
-                      : "text-text-secondary hover:text-text-primary hover:bg-white/10"
-                  }`}
-                >
-                  <i className={`${item.icon} mr-2 text-sm`}></i>
-                  {item.label}
-                </Button>
-              </Link>
-            ))}
+            {navigationItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    variant="ghost"
+                    className={`px-4 py-2 rounded-xl transition-colors ${
+                      isActive(item.href)
+                        ? "bg-apple-blue/20 text-apple-blue"
+                        : "text-text-secondary hover:text-text-primary hover:bg-white/10"
+                    }`}
+                  >
+                    <IconComponent size={16} className="mr-2" />
+                    {item.label}
+                  </Button>
+                </Link>
+              );
+            })}
           </div>
           
           {/* User Menu */}
@@ -65,7 +81,7 @@ export default function Navigation() {
               className="lg:hidden glass-button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <i className={`fas ${isMobileMenuOpen ? "fa-times" : "fa-bars"}`}></i>
+              {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
             </Button>
             
             {/* User Avatar */}
