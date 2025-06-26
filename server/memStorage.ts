@@ -80,6 +80,44 @@ export class MemStorage implements IStorage {
   
   private nextId = 1;
 
+  constructor() {
+    // Initialize with some sample data for demo purposes
+    this.initializeSampleData();
+  }
+
+  private initializeSampleData() {
+    // Add sample habits for demo
+    const demoUserId = "demo-user";
+    
+    this.habits.set(1, {
+      id: 1,
+      userId: demoUserId,
+      name: "Morning Exercise",
+      description: "30 minutes of cardio",
+      icon: "💪",
+      color: "#007AFF",
+      frequency: "daily",
+      targetCount: 1,
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    this.habits.set(2, {
+      id: 2,
+      userId: demoUserId,
+      name: "Read Books",
+      description: "Read for at least 20 minutes",
+      icon: "📚",
+      color: "#34C759",
+      frequency: "daily",
+      targetCount: 1,
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    this.nextId = 3;
+  }
+
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
@@ -146,7 +184,7 @@ export class MemStorage implements IStorage {
       content: entry.content,
       title: entry.title || null,
       mood: entry.mood || null,
-      tags: entry.tags || null,
+      tags: entry.tags ? (Array.isArray(entry.tags) ? entry.tags : []) : null,
       createdAt: now,
       updatedAt: now,
     };
@@ -183,13 +221,17 @@ export class MemStorage implements IStorage {
   // Voice note operations
   async createVoiceNote(voiceNote: InsertVoiceNote): Promise<VoiceNote> {
     const id = this.nextId++;
-    const newNote: VoiceNote = {
+    const newNote = {
       id,
-      ...voiceNote,
+      userId: voiceNote.userId,
+      fileName: voiceNote.fileName,
+      title: voiceNote.title || null,
+      duration: voiceNote.duration || null,
+      transcription: voiceNote.transcription || null,
       createdAt: new Date(),
     };
     this.voiceNotes.set(id, newNote);
-    return newNote;
+    return newNote as VoiceNote;
   }
 
   async getVoiceNote(noteId: number, userId: string): Promise<VoiceNote | undefined> {
@@ -213,13 +255,20 @@ export class MemStorage implements IStorage {
   // Habit operations
   async createHabit(habit: InsertHabit): Promise<Habit> {
     const id = this.nextId++;
-    const newHabit: Habit = {
+    const newHabit = {
       id,
-      ...habit,
+      userId: habit.userId,
+      name: habit.name,
+      description: habit.description || null,
+      icon: habit.icon || null,
+      color: habit.color || null,
+      frequency: habit.frequency || null,
+      targetCount: habit.targetCount || null,
+      isActive: habit.isActive || null,
       createdAt: new Date(),
     };
     this.habits.set(id, newHabit);
-    return newHabit;
+    return newHabit as Habit;
   }
 
   async updateHabit(habitId: number, userId: string, updateData: Partial<InsertHabit>): Promise<Habit | undefined> {
@@ -247,13 +296,18 @@ export class MemStorage implements IStorage {
   // Habit entry operations
   async createHabitEntry(entry: InsertHabitEntry): Promise<HabitEntry> {
     const id = this.nextId++;
-    const newEntry: HabitEntry = {
+    const newEntry = {
       id,
-      ...entry,
+      userId: entry.userId,
+      habitId: entry.habitId,
+      date: entry.date,
+      completed: entry.completed || null,
+      count: entry.count || null,
+      notes: entry.notes || null,
       createdAt: new Date(),
     };
     this.habitEntries.set(id, newEntry);
-    return newEntry;
+    return newEntry as HabitEntry;
   }
 
   async getHabitEntries(habitId: number, userId: string): Promise<HabitEntry[]> {
