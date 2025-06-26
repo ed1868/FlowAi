@@ -164,7 +164,7 @@ export class MemStorage implements IStorage {
       updatedAt: new Date() 
     };
     this.journalEntries.set(entryId, updatedEntry);
-    return updatedEntry;
+    return updatedEntry as JournalEntry;
   }
 
   async deleteJournalEntry(entryId: number, userId: string): Promise<boolean> {
