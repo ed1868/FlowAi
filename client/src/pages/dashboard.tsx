@@ -212,7 +212,7 @@ export default function Dashboard() {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <i className="fas fa-pen text-text-tertiary text-2xl mb-4"></i>
+                    <PenTool className="text-text-tertiary mx-auto mb-4" size={32} />
                     <p className="text-text-tertiary">No journal entries yet</p>
                     <Link href="/journal">
                       <Button variant="outline" size="sm" className="mt-2">
