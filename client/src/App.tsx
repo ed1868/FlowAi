@@ -15,7 +15,10 @@ import Analytics from "@/pages/analytics";
 import Navigation from "@/components/navigation";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  // Debug logging
+  console.log('Auth state:', { isAuthenticated, isLoading, user });
 
   if (isLoading) {
     return (
