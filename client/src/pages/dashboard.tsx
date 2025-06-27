@@ -10,6 +10,16 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useEffect } from "react";
+import { 
+  Flame, 
+  Target, 
+  PenTool, 
+  Mic, 
+  Leaf, 
+  TrendingUp, 
+  Plus, 
+  ExternalLink 
+} from "lucide-react";
 
 interface DashboardAnalytics {
   todayStats: {
@@ -41,35 +51,6 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  // Handle unauthorized errors
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, authLoading, toast]);
-
-  useEffect(() => {
-    if (error && isUnauthorizedError(error as Error)) {
-      toast({
-        title: "Unauthorized", 
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [error, toast]);
-
   if (authLoading || analyticsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-dark-1">
@@ -83,7 +64,7 @@ export default function Dashboard() {
     );
   }
 
-  const userDisplayName = user?.firstName || user?.email || 'User';
+  const userDisplayName = 'User';
 
   return (
     <div className="min-h-screen bg-dark-1 text-text-primary pt-20 pb-8">
@@ -98,11 +79,11 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center space-x-4 mt-4 lg:mt-0">
             <Badge variant="secondary" className="glass-button px-4 py-2">
-              <i className="fas fa-fire text-apple-orange mr-2"></i>
+              <Flame className="text-apple-orange mr-2" size={16} />
               {analytics?.streak || 0} day streak
             </Badge>
             <Badge variant="secondary" className="glass-button px-4 py-2">
-              <i className="fas fa-target text-apple-green mr-2"></i>
+              <Target className="text-apple-green mr-2" size={16} />
               {analytics?.goalsCompleted || 0}/{analytics?.totalGoals || 5} goals
             </Badge>
           </div>
@@ -161,25 +142,25 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Link href="/journal">
                     <Button variant="ghost" className="glass-button p-4 rounded-xl text-center hover:scale-105 transition-transform w-full h-auto flex flex-col">
-                      <i className="fas fa-pen text-apple-orange text-xl mb-2"></i>
+                      <PenTool className="text-apple-orange mb-2" size={24} />
                       <span className="text-sm">Journal</span>
                     </Button>
                   </Link>
                   <Link href="/voice-notes">
                     <Button variant="ghost" className="glass-button p-4 rounded-xl text-center hover:scale-105 transition-transform w-full h-auto flex flex-col">
-                      <i className="fas fa-microphone text-apple-green text-xl mb-2"></i>
+                      <Mic className="text-apple-green mb-2" size={24} />
                       <span className="text-sm">Voice Note</span>
                     </Button>
                   </Link>
                   <Link href="/habits">
                     <Button variant="ghost" className="glass-button p-4 rounded-xl text-center hover:scale-105 transition-transform w-full h-auto flex flex-col">
-                      <i className="fas fa-spa text-apple-blue text-xl mb-2"></i>
+                      <Leaf className="text-apple-blue mb-2" size={24} />
                       <span className="text-sm">Reset Kit</span>
                     </Button>
                   </Link>
                   <Link href="/analytics">
                     <Button variant="ghost" className="glass-button p-4 rounded-xl text-center hover:scale-105 transition-transform w-full h-auto flex flex-col">
-                      <i className="fas fa-chart-line text-purple-400 text-xl mb-2"></i>
+                      <TrendingUp className="text-purple-400 mb-2" size={24} />
                       <span className="text-sm">Analytics</span>
                     </Button>
                   </Link>
@@ -197,7 +178,7 @@ export default function Dashboard() {
               <CardTitle className="text-lg font-semibold">Today's Habits</CardTitle>
               <Link href="/habits">
                 <Button variant="ghost" size="sm" className="text-apple-blue hover:text-apple-indigo">
-                  <i className="fas fa-plus"></i>
+                  <Plus size={16} />
                 </Button>
               </Link>
             </CardHeader>
@@ -212,7 +193,7 @@ export default function Dashboard() {
               <CardTitle className="text-lg font-semibold">Recent Thoughts</CardTitle>
               <Link href="/journal">
                 <Button variant="ghost" size="sm" className="text-apple-blue hover:text-apple-indigo">
-                  <i className="fas fa-external-link-alt"></i>
+                  <ExternalLink size={16} />
                 </Button>
               </Link>
             </CardHeader>
