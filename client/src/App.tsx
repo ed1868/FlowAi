@@ -21,15 +21,24 @@ function Router() {
   // Debug logging
   console.log('Auth state:', { isAuthenticated, isLoading, user });
 
-  // Debug the actual API response
+  // Test auth immediately and whenever auth state changes
   React.useEffect(() => {
     const testAuth = async () => {
       try {
         const response = await fetch('/api/auth/user', { credentials: 'include' });
         const data = await response.text();
-        console.log('Direct auth test:', { status: response.status, data });
+        console.log('Auth test result:', { status: response.status, data, length: data.length });
+        
+        if (response.ok && data && data.length > 0) {
+          try {
+            const parsed = JSON.parse(data);
+            console.log('Parsed user data:', parsed);
+          } catch (e) {
+            console.log('Failed to parse JSON:', data);
+          }
+        }
       } catch (error) {
-        console.log('Direct auth test error:', error);
+        console.log('Auth test error:', error);
       }
     };
     
