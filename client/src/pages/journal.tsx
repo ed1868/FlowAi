@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { X, Save, Search, Edit, Trash2, BookOpen } from "lucide-react";
 
 interface JournalEntry {
   id: number;
@@ -268,7 +269,7 @@ export default function Journal() {
                 <span>{editingEntry ? "Edit Entry" : "New Entry"}</span>
                 {editingEntry && (
                   <Button variant="ghost" size="sm" onClick={resetForm}>
-                    <i className="fas fa-times"></i>
+                    <X className="h-4 w-4" />
                   </Button>
                 )}
               </CardTitle>
@@ -325,7 +326,7 @@ export default function Journal() {
                     className="flex-1 bg-apple-blue hover:bg-apple-blue/80 text-white"
                     disabled={createEntryMutation.isPending || updateEntryMutation.isPending}
                   >
-                    <i className="fas fa-save mr-2"></i>
+                    <Save className="h-4 w-4 mr-2" />
                     {editingEntry ? "Update Entry" : "Save Entry"}
                   </Button>
                   
@@ -345,7 +346,7 @@ export default function Journal() {
             <Card className="glass-card rounded-2xl p-4">
               <CardContent className="p-0">
                 <div className="relative">
-                  <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary"></i>
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary" />
                   <Input
                     placeholder="Search entries..."
                     value={searchTerm}
@@ -387,7 +388,7 @@ export default function Journal() {
                               onClick={() => editEntry(entry)}
                               className="text-apple-blue hover:text-apple-indigo"
                             >
-                              <i className="fas fa-edit"></i>
+                              <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -396,7 +397,7 @@ export default function Journal() {
                               className="text-apple-red hover:text-red-400"
                               disabled={deleteEntryMutation.isPending}
                             >
-                              <i className="fas fa-trash"></i>
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -421,7 +422,7 @@ export default function Journal() {
               ) : (
                 <Card className="glass-card rounded-2xl p-8">
                   <CardContent className="p-0 text-center">
-                    <i className="fas fa-journal-whills text-text-tertiary text-3xl mb-4"></i>
+                    <BookOpen className="h-12 w-12 text-text-tertiary mb-4 mx-auto" />
                     <h3 className="text-lg font-semibold mb-2">No entries found</h3>
                     <p className="text-text-tertiary">
                       {searchTerm ? "Try a different search term" : "Start writing your first journal entry"}
