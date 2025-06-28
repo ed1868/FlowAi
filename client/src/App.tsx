@@ -18,32 +18,7 @@ import Navigation from "@/components/navigation";
 function Router() {
   const { isAuthenticated, isLoading, user, refetch } = useAuth();
 
-  // Debug logging
-  console.log('Auth state:', { isAuthenticated, isLoading, user });
 
-  // Test auth immediately and whenever auth state changes
-  React.useEffect(() => {
-    const testAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/user', { credentials: 'include' });
-        const data = await response.text();
-        console.log('Auth test result:', { status: response.status, data, length: data.length });
-        
-        if (response.ok && data && data.length > 0) {
-          try {
-            const parsed = JSON.parse(data);
-            console.log('Parsed user data:', parsed);
-          } catch (e) {
-            console.log('Failed to parse JSON:', data);
-          }
-        }
-      } catch (error) {
-        console.log('Auth test error:', error);
-      }
-    };
-    
-    testAuth();
-  }, []);
 
   if (isLoading) {
     return (

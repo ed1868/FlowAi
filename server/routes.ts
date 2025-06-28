@@ -53,14 +53,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      console.log('Auth request - userId:', userId, 'claims:', req.user.claims);
       
       let user = await storage.getUser(userId);
-      console.log('User from storage:', user);
       
       if (!user) {
         // User doesn't exist in storage, create from claims
-        console.log('Creating user from claims...');
         user = await storage.upsertUser({
           id: req.user.claims.sub,
           email: req.user.claims.email,
@@ -68,7 +65,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastName: req.user.claims.last_name,
           profileImageUrl: req.user.claims.profile_image_url,
         });
-        console.log('Created user:', user);
       }
       
       res.json(user);
