@@ -21,19 +21,20 @@ function Router() {
   // Debug logging
   console.log('Auth state:', { isAuthenticated, isLoading, user });
 
-  // Simple fix: if we just loaded the page and there's no auth but we expect to be authenticated,
-  // refresh once to ensure session cookies are properly loaded
+  // Debug the actual API response
   React.useEffect(() => {
-    const hasRefreshed = sessionStorage.getItem('auth-refresh');
+    const testAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/user', { credentials: 'include' });
+        const data = await response.text();
+        console.log('Direct auth test:', { status: response.status, data });
+      } catch (error) {
+        console.log('Direct auth test error:', error);
+      }
+    };
     
-    if (!hasRefreshed && !isLoading && !isAuthenticated) {
-      console.log('First load - refreshing to ensure session cookies...');
-      sessionStorage.setItem('auth-refresh', 'true');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    }
-  }, [isLoading, isAuthenticated]);
+    testAuth();
+  }, []);
 
   if (isLoading) {
     return (
