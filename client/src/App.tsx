@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -15,10 +16,24 @@ import Analytics from "@/pages/analytics";
 import Navigation from "@/components/navigation";
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, refetch } = useAuth();
 
   // Debug logging
   console.log('Auth state:', { isAuthenticated, isLoading, user });
+
+  // Simple fix: if we just loaded the page and there's no auth but we expect to be authenticated,
+  // refresh once to ensure session cookies are properly loaded
+  React.useEffect(() => {
+    const hasRefreshed = sessionStorage.getItem('auth-refresh');
+    
+    if (!hasRefreshed && !isLoading && !isAuthenticated) {
+      console.log('First load - refreshing to ensure session cookies...');
+      sessionStorage.setItem('auth-refresh', 'true');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+  }, [isLoading, isAuthenticated]);
 
   if (isLoading) {
     return (
