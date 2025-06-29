@@ -492,7 +492,7 @@ export default function VoiceNotesNew() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <Label htmlFor="title" className="text-text-primary">Title</Label>
                     <Input
@@ -500,7 +500,7 @@ export default function VoiceNotesNew() {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Give your voice note a title..."
-                      className="glass-input border-glass-border mt-2"
+                      className="glass-input border-glass-border mt-2 h-12 sm:h-10 text-base sm:text-sm"
                     />
                   </div>
 
@@ -577,23 +577,27 @@ export default function VoiceNotesNew() {
         </div>
 
         {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="glass-tabs">
-          <TabsTrigger value="notes" className="glass-tab">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <TabsList className="glass-tabs w-full grid grid-cols-1 sm:grid-cols-4 h-auto sm:h-10 gap-2 sm:gap-0 p-2 sm:p-1">
+          <TabsTrigger value="notes" className="glass-tab h-12 sm:h-8 text-sm">
             <Mic className="h-4 w-4 mr-2" />
-            Voice Notes
+            <span className="hidden sm:inline">Voice Notes</span>
+            <span className="sm:hidden">Notes</span>
           </TabsTrigger>
-          <TabsTrigger value="ai-insights" className="glass-tab">
+          <TabsTrigger value="ai-insights" className="glass-tab h-12 sm:h-8 text-sm">
             <Brain className="h-4 w-4 mr-2" />
-            FlowAI Analysis
+            <span className="hidden sm:inline">FlowAI Analysis</span>
+            <span className="sm:hidden">AI Insights</span>
           </TabsTrigger>
-          <TabsTrigger value="future-me" className="glass-tab">
+          <TabsTrigger value="future-me" className="glass-tab h-12 sm:h-8 text-sm">
             <Bot className="h-4 w-4 mr-2" />
-            Future Me
+            <span className="hidden sm:inline">Future Me</span>
+            <span className="sm:hidden">Future</span>
           </TabsTrigger>
-          <TabsTrigger value="voice-clones" className="glass-tab">
+          <TabsTrigger value="voice-clones" className="glass-tab h-12 sm:h-8 text-sm">
             <Volume2 className="h-4 w-4 mr-2" />
-            Voice Clones
+            <span className="hidden sm:inline">Voice Clones</span>
+            <span className="sm:hidden">Clones</span>
           </TabsTrigger>
         </TabsList>
 
