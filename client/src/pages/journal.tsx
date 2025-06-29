@@ -55,7 +55,7 @@ export default function Journal() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterMood, setFilterMood] = useState<string>("");
+  const [filterMood, setFilterMood] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
 
   // Form state
@@ -151,7 +151,7 @@ export default function Journal() {
         entry.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
         entry.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      const matchesMood = !filterMood || entry.mood === filterMood;
+      const matchesMood = !filterMood || filterMood === "all" || entry.mood === filterMood;
       
       return matchesSearch && matchesMood;
     })
@@ -225,7 +225,7 @@ export default function Journal() {
                   <SelectValue placeholder="Filter mood" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All moods</SelectItem>
+                  <SelectItem value="all">All moods</SelectItem>
                   {moodOptions.map(mood => (
                     <SelectItem key={mood.value} value={mood.value}>
                       {mood.icon} {mood.label}
