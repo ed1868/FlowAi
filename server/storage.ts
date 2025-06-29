@@ -55,6 +55,7 @@ export interface IStorage {
   getVoiceNote(noteId: number, userId: string): Promise<VoiceNote | undefined>;
   deleteVoiceNote(noteId: number, userId: string): Promise<boolean>;
   getUserVoiceNotes(userId: string): Promise<VoiceNote[]>;
+  updateVoiceNote(noteId: number, userId: string, updateData: Partial<InsertVoiceNote>): Promise<VoiceNote | undefined>;
   
   // Habit operations
   createHabit(habit: InsertHabit): Promise<Habit>;
@@ -214,6 +215,15 @@ export class DatabaseStorage implements IStorage {
       .from(voiceNotes)
       .where(eq(voiceNotes.userId, userId))
       .orderBy(desc(voiceNotes.createdAt));
+  }
+
+  async updateVoiceNote(noteId: number, userId: string, updateData: Partial<InsertVoiceNote>): Promise<VoiceNote | undefined> {
+    const [updatedNote] = await db
+      .update(voiceNotes)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(voiceNotes.id, noteId), eq(voiceNotes.userId, userId)))
+      .returning();
+    return updatedNote;
   }
 
   // Habit operations
