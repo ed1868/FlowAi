@@ -356,21 +356,21 @@ export default function VoiceNotesNew() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-8 px-4 md:px-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen pt-20 sm:pt-24 pb-8 px-4 md:px-8">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
         <div>
-          <h1 className="text-4xl font-bold gradient-text">Voice Studio</h1>
-          <p className="text-text-secondary mt-2">
+          <h1 className="text-2xl sm:text-4xl font-bold gradient-text">Voice Studio</h1>
+          <p className="text-text-secondary mt-2 text-sm sm:text-base">
             Record thoughts, clone your voice, and get AI-powered insights
           </p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Dialog open={isVoiceCloneDialogOpen} onOpenChange={setIsVoiceCloneDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="glass-button border-glass-border">
-                <Bot className="h-4 w-4 mr-2" />
+              <Button variant="outline" className="glass-button border-glass-border h-12 sm:h-10 w-full sm:w-auto justify-center text-base sm:text-sm font-medium">
+                <Bot className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
                 Clone Voice
               </Button>
             </DialogTrigger>
@@ -433,24 +433,24 @@ export default function VoiceNotesNew() {
           
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-apple-blue hover:bg-apple-blue/80 text-white">
-                <Mic className="h-4 w-4 mr-2" />
+              <Button className="bg-apple-blue hover:bg-apple-blue/80 text-white h-12 sm:h-10 w-full sm:w-auto justify-center text-base sm:text-sm font-medium">
+                <Mic className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
                 New Recording
               </Button>
             </DialogTrigger>
-            <DialogContent className="glass-card border-glass-border max-w-2xl">
+            <DialogContent className="glass-card border-glass-border max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0">
               <DialogHeader>
                 <DialogTitle className="gradient-text">Create Voice Note</DialogTitle>
               </DialogHeader>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Recording Controls */}
-                <div className="flex items-center justify-center space-x-4 p-6 glass-card rounded-lg">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 p-4 sm:p-6 glass-card rounded-lg">
                   {!isRecording ? (
                     <Button
                       type="button"
                       onClick={startRecording}
-                      className="bg-red-500 hover:bg-red-600 text-white"
+                      className="bg-red-500 hover:bg-red-600 text-white h-12 sm:h-10 w-full sm:w-auto px-6 text-base sm:text-sm font-medium"
                     >
                       <Mic className="h-5 w-5 mr-2" />
                       Start Recording
@@ -459,7 +459,7 @@ export default function VoiceNotesNew() {
                     <Button
                       type="button"
                       onClick={stopRecording}
-                      className="bg-red-600 hover:bg-red-700 text-white animate-pulse"
+                      className="bg-red-600 hover:bg-red-700 text-white animate-pulse h-12 sm:h-10 w-full sm:w-auto px-6 text-base sm:text-sm font-medium"
                     >
                       <Square className="h-5 w-5 mr-2" />
                       Stop Recording
