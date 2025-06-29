@@ -106,7 +106,7 @@ function TimerComponent() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, timeLeft, currentSessionId]);
+  }, [isRunning, timeLeft, currentSessionId, workflow]);
 
   // Request notification permission
   useEffect(() => {
@@ -133,44 +133,36 @@ function TimerComponent() {
         workflow: workflow,
         completed: false,
       });
-      return response.json();
+      return response;
     },
-    onSuccess: (session) => {
-      setCurrentSessionId(session.id);
+    onSuccess: (data) => {
+      setCurrentSessionId(data.id);
       setSessionStartTime(new Date());
       setIsRunning(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
     },
   });
 
   const updateSessionMutation = useMutation({
-    mutationFn: async (data: {
-      sessionId: number;
-      actualDuration?: number;
-      mood?: string;
-      setbacks?: string;
-      notes?: string;
-      productivity?: number;
-    }) => {
-      const response = await apiRequest("PATCH", `/api/sessions/${data.sessionId}`, {
+    mutationFn: async ({ sessionId, actualDuration, mood, setbacks, notes, productivity }: any) => {
+      return apiRequest("PATCH", `/api/sessions/${sessionId}`, {
         endTime: new Date().toISOString(),
+        duration: actualDuration,
         completed: true,
-        actualDuration: data.actualDuration,
-        mood: data.mood,
-        setbacks: data.setbacks,
-        notes: data.notes,
-        productivity: data.productivity,
+        mood,
+        setbacks,
+        notes,
+        productivity,
       });
-      return response.json();
     },
     onSuccess: () => {
-      // Reset form
+      setShowCompletionForm(false);
+      setCurrentSessionId(null);
+      setSessionStartTime(null);
       setMood("");
       setSetbacks("");
       setNotes("");
       setProductivity(5);
-      setShowCompletionForm(false);
-      setCurrentSessionId(null);
-      // Refetch session history
       queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
     },
   });
@@ -178,8 +170,6 @@ function TimerComponent() {
   const completeSession = (sessionId: number) => {
     setShowCompletionForm(true);
   };
-
-
 
   const handleStart = () => {
     if (timeLeft === 0) {
@@ -198,6 +188,10 @@ function TimerComponent() {
     if (currentSessionId) {
       setCurrentSessionId(null);
     }
+    // Reset Pomodoro state
+    setPomodoroSession(1);
+    setIsOnBreak(false);
+    setCompletedCycles(0);
   };
 
   const handleDurationChange = (minutes: number) => {
@@ -256,25 +250,19 @@ function TimerComponent() {
         <select 
           value={workflow} 
           onChange={(e) => setWorkflow(e.target.value)}
-          disabled={isRunning}
-          style={{ padding: "5px", backgroundColor: "#333", color: "#fff", border: "1px solid #555", marginRight: "10px" }}
+          style={{ padding: "5px", marginRight: "20px" }}
         >
           <option value="standard">Standard</option>
           <option value="pomodoro">Pomodoro</option>
-          <option value="ultradian">Ultradian Rhythms</option>
+          <option value="ultradian">Ultradian</option>
           <option value="flowtime">Flowtime</option>
         </select>
-        <small style={{ color: "#888" }}>{getWorkflowDescription()}</small>
-      </div>
-
-      {/* Session Type Selector */}
-      <div style={{ marginBottom: "20px" }}>
+        
         <label style={{ marginRight: "10px" }}>Session Type:</label>
         <select 
           value={sessionType} 
           onChange={(e) => setSessionType(e.target.value)}
-          disabled={isRunning}
-          style={{ padding: "5px", backgroundColor: "#333", color: "#fff", border: "1px solid #555" }}
+          style={{ padding: "5px" }}
         >
           <option value="deep_work">Deep Work</option>
           <option value="study">Study</option>
@@ -284,7 +272,21 @@ function TimerComponent() {
         </select>
       </div>
 
-      {/* Duration Presets */}
+      {/* Workflow Description */}
+      <div style={{ marginBottom: "20px", fontStyle: "italic", color: "#ccc" }}>
+        {getWorkflowDescription()}
+      </div>
+
+      {/* Pomodoro Status */}
+      {workflow === "pomodoro" && (
+        <div style={{ marginBottom: "20px", padding: "10px", backgroundColor: "#2a2a2a", borderRadius: "5px" }}>
+          <div>Session: {pomodoroSession}/4</div>
+          <div>Status: {isOnBreak ? "Break Time" : "Work Time"}</div>
+          <div>Completed Cycles: {completedCycles}</div>
+        </div>
+      )}
+
+      {/* Duration Selector */}
       <div style={{ marginBottom: "20px" }}>
         <label style={{ marginRight: "10px" }}>Duration:</label>
         {getWorkflowDurations().map(minutes => (
@@ -293,11 +295,12 @@ function TimerComponent() {
             onClick={() => handleDurationChange(minutes)}
             disabled={isRunning}
             style={{
-              margin: "0 5px",
               padding: "5px 10px",
-              backgroundColor: timeLeft === minutes * 60 ? "#444" : "#222",
+              margin: "0 5px",
+              backgroundColor: timeLeft === minutes * 60 ? "#4CAF50" : "#333",
               color: "#fff",
-              border: "1px solid #555",
+              border: "none",
+              borderRadius: "3px",
               cursor: isRunning ? "not-allowed" : "pointer"
             }}
           >
@@ -307,15 +310,12 @@ function TimerComponent() {
       </div>
 
       {/* Timer Display */}
-      <div style={{ 
-        fontSize: "48px", 
-        fontFamily: "monospace", 
-        textAlign: "center", 
-        margin: "30px 0",
-        padding: "20px",
-        backgroundColor: "#222",
-        border: "2px solid #444",
-        borderRadius: "10px"
+      <div style={{
+        fontSize: "48px",
+        fontWeight: "bold",
+        textAlign: "center",
+        marginBottom: "20px",
+        color: timeLeft < 300 ? "#ff6b6b" : "#4CAF50" // Red when < 5 minutes
       }}>
         {formatTime(timeLeft)}
       </div>
@@ -337,12 +337,11 @@ function TimerComponent() {
         }} />
       </div>
 
-      {/* Control Buttons */}
-      <div style={{ textAlign: "center" }}>
+      {/* Timer Controls */}
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
         {!isRunning ? (
           <button
             onClick={handleStart}
-            disabled={startSessionMutation.isPending}
             style={{
               padding: "15px 30px",
               fontSize: "18px",
@@ -354,7 +353,7 @@ function TimerComponent() {
               marginRight: "10px"
             }}
           >
-            {timeLeft === 90 * 60 ? "Start" : "Resume"}
+            Start
           </button>
         ) : (
           <button
@@ -362,7 +361,7 @@ function TimerComponent() {
             style={{
               padding: "15px 30px",
               fontSize: "18px",
-              backgroundColor: "#FF9800",
+              backgroundColor: "#ff9800",
               color: "#fff",
               border: "none",
               borderRadius: "5px",
@@ -408,42 +407,23 @@ function TimerComponent() {
         )}
       </div>
 
-      {/* Session Status */}
-      {currentSessionId && (
-        <div style={{ 
-          marginTop: "20px", 
-          padding: "10px", 
-          backgroundColor: "#1a4d2e", 
-          border: "1px solid #4CAF50",
-          borderRadius: "5px",
-          textAlign: "center"
-        }}>
-          Session Active - Stay focused! 🎯
-        </div>
-      )}
-
       {/* Session Completion Form */}
       {showCompletionForm && (
         <div style={{ 
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          backgroundColor: "#222",
-          border: "2px solid #444",
+          marginTop: "30px", 
+          padding: "20px", 
+          backgroundColor: "#2a2a2a", 
           borderRadius: "10px",
-          padding: "30px",
-          width: "400px",
-          zIndex: 1000
+          border: "1px solid #333"
         }}>
-          <h4 style={{ marginBottom: "20px" }}>Session Complete! 🎉</h4>
+          <h4>How was your session?</h4>
           
           <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>How did you feel?</label>
+            <label style={{ display: "block", marginBottom: "5px" }}>Mood:</label>
             <select 
               value={mood} 
               onChange={(e) => setMood(e.target.value)}
-              style={{ width: "100%", padding: "8px", backgroundColor: "#333", color: "#fff", border: "1px solid #555" }}
+              style={{ width: "100%", padding: "5px" }}
             >
               <option value="">Select mood...</option>
               <option value="energized">Energized</option>
@@ -454,77 +434,60 @@ function TimerComponent() {
               <option value="stressed">Stressed</option>
             </select>
           </div>
-
+          
           <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>Productivity (1-10)</label>
+            <label style={{ display: "block", marginBottom: "5px" }}>Productivity (1-10):</label>
             <input 
               type="range" 
               min="1" 
               max="10" 
-              value={productivity}
+              value={productivity} 
               onChange={(e) => setProductivity(parseInt(e.target.value))}
               style={{ width: "100%" }}
             />
-            <div style={{ textAlign: "center", color: "#888" }}>{productivity}/10</div>
+            <div style={{ textAlign: "center", marginTop: "5px" }}>{productivity}/10</div>
           </div>
-
+          
           <div style={{ marginBottom: "15px" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>Any setbacks or interruptions?</label>
-            <textarea 
-              value={setbacks}
+            <label style={{ display: "block", marginBottom: "5px" }}>Setbacks or distractions:</label>
+            <input 
+              type="text" 
+              value={setbacks} 
               onChange={(e) => setSetbacks(e.target.value)}
-              placeholder="Phone notifications, noise, etc..."
-              style={{ 
-                width: "100%", 
-                height: "60px", 
-                padding: "8px", 
-                backgroundColor: "#333", 
-                color: "#fff", 
-                border: "1px solid #555",
-                borderRadius: "3px"
-              }}
+              placeholder="What interrupted your focus?"
+              style={{ width: "100%", padding: "5px" }}
             />
           </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", marginBottom: "5px" }}>Session notes</label>
+          
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>Notes:</label>
             <textarea 
-              value={notes}
+              value={notes} 
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What did you work on? How did it go?"
-              style={{ 
-                width: "100%", 
-                height: "60px", 
-                padding: "8px", 
-                backgroundColor: "#333", 
-                color: "#fff", 
-                border: "1px solid #555",
-                borderRadius: "3px"
-              }}
+              placeholder="Any other thoughts about this session?"
+              style={{ width: "100%", padding: "5px", height: "60px" }}
             />
           </div>
-
-          <div style={{ display: "flex", gap: "10px" }}>
+          
+          <div style={{ textAlign: "center" }}>
             <button
               onClick={handleCompleteSession}
-              disabled={updateSessionMutation.isPending}
               style={{
-                flex: 1,
-                padding: "12px",
+                padding: "10px 20px",
                 backgroundColor: "#4CAF50",
                 color: "#fff",
                 border: "none",
                 borderRadius: "5px",
-                cursor: "pointer"
+                cursor: "pointer",
+                marginRight: "10px"
               }}
             >
-              {updateSessionMutation.isPending ? "Saving..." : "Save Session"}
+              Save Session
             </button>
             <button
               onClick={() => setShowCompletionForm(false)}
               style={{
-                flex: 1,
-                padding: "12px",
+                padding: "10px 20px",
                 backgroundColor: "#666",
                 color: "#fff",
                 border: "none",
@@ -532,7 +495,7 @@ function TimerComponent() {
                 cursor: "pointer"
               }}
             >
-              Skip
+              Cancel
             </button>
           </div>
         </div>
@@ -541,8 +504,9 @@ function TimerComponent() {
       {/* Session History */}
       <div style={{ 
         marginTop: "30px", 
-        padding: "15px", 
-        backgroundColor: "#1a1a1a", 
+        padding: "20px", 
+        backgroundColor: "#2a2a2a", 
+        borderRadius: "10px",
         border: "1px solid #333",
         borderRadius: "5px"
       }}>
@@ -553,109 +517,65 @@ function TimerComponent() {
           <div style={{ maxHeight: "200px", overflowY: "auto" }}>
             {sessions.slice(0, 5).map((session: any) => (
               <div key={session.id} style={{ 
-                padding: "10px", 
                 marginBottom: "10px", 
-                backgroundColor: "#2a2a2a", 
-                border: "1px solid #444",
-                borderRadius: "5px"
+                padding: "10px", 
+                backgroundColor: "#333", 
+                borderRadius: "5px" 
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span>{session.type} - {session.workflow}</span>
-                  <span style={{ color: "#888" }}>
-                    {session.actualDuration || session.plannedDuration}min
-                  </span>
+                <div style={{ fontWeight: "bold" }}>
+                  {session.type.replace('_', ' ')} - {session.workflow} ({session.duration || session.plannedDuration}min)
                 </div>
-                {session.mood && (
-                  <div style={{ fontSize: "12px", color: "#aaa" }}>
-                    Mood: {session.mood} | Productivity: {session.productivity}/10
-                  </div>
-                )}
-                {session.setbacks && (
-                  <div style={{ fontSize: "12px", color: "#f44336" }}>
-                    Setbacks: {session.setbacks}
-                  </div>
-                )}
+                <div style={{ fontSize: "12px", color: "#ccc" }}>
+                  {new Date(session.startTime).toLocaleDateString()} at {new Date(session.startTime).toLocaleTimeString()}
+                </div>
+                {session.mood && <div style={{ fontSize: "12px" }}>Mood: {session.mood}</div>}
+                {session.productivity && <div style={{ fontSize: "12px" }}>Productivity: {session.productivity}/10</div>}
+                {session.notes && <div style={{ fontSize: "12px", color: "#aaa" }}>"{session.notes}"</div>}
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Instructions */}
-      <div style={{ 
-        marginTop: "20px", 
-        padding: "15px", 
-        backgroundColor: "#1a1a1a", 
-        border: "1px solid #333",
-        borderRadius: "5px"
-      }}>
-        <h4>Workflow Methods:</h4>
-        <ul style={{ paddingLeft: "20px", color: "#ccc" }}>
-          <li><strong>Pomodoro:</strong> 25min work + 5min break cycles</li>
-          <li><strong>Ultradian:</strong> 90min work + 20min break (natural rhythms)</li>
-          <li><strong>Flowtime:</strong> Work until you naturally need a break</li>
-          <li><strong>Standard:</strong> Traditional fixed-duration sessions</li>
-        </ul>
       </div>
     </div>
   );
 }
 
 function Dashboard() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("dashboard");
-  
-  const renderContent = () => {
-    switch (activeTab) {
-      case "timer":
-        return <TimerComponent />;
-      case "journal":
-        return <div>Journal content will go here</div>;
-      case "voice-notes":
-        return <div>Voice Notes content will go here</div>;
-      case "habits":
-        return <div>Habits content will go here</div>;
-      case "analytics":
-        return <div>Analytics content will go here</div>;
-      default:
-        return <div>Welcome to your Flow dashboard!</div>;
-    }
-  };
-  
+  const [activeTab, setActiveTab] = useState("timer");
+
   return (
-    <div style={{ padding: "20px", backgroundColor: "#000", color: "#fff", minHeight: "100vh" }}>
-      <div style={{ borderBottom: "1px solid #333", paddingBottom: "20px", marginBottom: "20px" }}>
-        <h1>Flow Dashboard</h1>
-        <p>Welcome, {user?.firstName || user?.email || "User"}!</p>
-        <a href="/api/logout" style={{ color: "#fff", textDecoration: "underline" }}>
-          Logout
-        </a>
-      </div>
+    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
+      <h1>Flow - Productivity Station</h1>
       
-      <div style={{ marginBottom: "30px" }}>
-        <nav>
-          {["dashboard", "timer", "journal", "voice-notes", "habits", "analytics"].map((tab) => (
-            <button 
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{ 
-                margin: "5px", 
-                padding: "10px 15px", 
-                backgroundColor: activeTab === tab ? "#444" : "#222", 
-                color: "#fff", 
-                border: "1px solid #555",
-                cursor: "pointer"
-              }}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1).replace("-", " ")}
-            </button>
-          ))}
-        </nav>
+      {/* Tab Navigation */}
+      <div style={{ marginBottom: "30px", borderBottom: "1px solid #333" }}>
+        {["timer", "journal", "habits", "voice-notes", "analytics"].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: "10px 20px",
+              marginRight: "10px",
+              backgroundColor: activeTab === tab ? "#4CAF50" : "transparent",
+              color: "#fff",
+              border: "none",
+              borderBottom: activeTab === tab ? "2px solid #4CAF50" : "2px solid transparent",
+              cursor: "pointer",
+              textTransform: "capitalize"
+            }}
+          >
+            {tab.replace('-', ' ')}
+          </button>
+        ))}
       </div>
-      
-      <div style={{ padding: "20px", backgroundColor: "#111", border: "1px solid #333" }}>
-        <h2>Current Tab: {activeTab}</h2>
-        {renderContent()}
+
+      {/* Tab Content */}
+      <div>
+        {activeTab === "timer" && <TimerComponent />}
+        {activeTab === "journal" && <div><h3>Journal</h3><p>Journal feature coming soon...</p></div>}
+        {activeTab === "habits" && <div><h3>Habits</h3><p>Habit tracking coming soon...</p></div>}
+        {activeTab === "voice-notes" && <div><h3>Voice Notes</h3><p>Voice notes coming soon...</p></div>}
+        {activeTab === "analytics" && <div><h3>Analytics</h3><p>Analytics dashboard coming soon...</p></div>}
       </div>
     </div>
   );
@@ -663,32 +583,22 @@ function Dashboard() {
 
 function Landing() {
   return (
-    <div style={{ 
-      padding: "20px", 
-      backgroundColor: "#000", 
-      color: "#fff", 
-      minHeight: "100vh", 
-      textAlign: "center",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center"
-    }}>
+    <div style={{ textAlign: "center", padding: "50px" }}>
       <h1>Welcome to Flow</h1>
-      <p style={{ marginBottom: "30px" }}>Please log in to access your productivity dashboard.</p>
+      <p>Your comprehensive productivity station</p>
       <a 
-        href="/api/login" 
-        style={{ 
-          color: "#fff", 
-          textDecoration: "none", 
-          fontSize: "18px",
-          backgroundColor: "#333",
-          padding: "10px 20px",
+        href="/api/login"
+        style={{
+          display: "inline-block",
+          padding: "15px 30px",
+          backgroundColor: "#4CAF50",
+          color: "#fff",
+          textDecoration: "none",
           borderRadius: "5px",
-          border: "1px solid #555"
+          fontSize: "18px"
         }}
       >
-        Log In
+        Login to Get Started
       </a>
     </div>
   );
@@ -698,20 +608,7 @@ function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div style={{ 
-        padding: "20px", 
-        backgroundColor: "#000", 
-        color: "#fff", 
-        minHeight: "100vh", 
-        textAlign: "center",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center"
-      }}>
-        <p>Loading...</p>
-      </div>
-    );
+    return <div style={{ textAlign: "center", padding: "50px" }}>Loading...</div>;
   }
 
   return isAuthenticated ? <Dashboard /> : <Landing />;
@@ -720,7 +617,14 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppContent />
+      <div style={{ 
+        minHeight: "100vh", 
+        backgroundColor: "#1a1a1a", 
+        color: "#fff",
+        fontFamily: "Arial, sans-serif"
+      }}>
+        <AppContent />
+      </div>
     </QueryClientProvider>
   );
 }
