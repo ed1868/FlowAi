@@ -87,7 +87,7 @@ export class MemStorage implements IStorage {
 
   private initializeSampleData() {
     // Add sample data for any authenticated user ID
-    const sampleUserIds = ["demo-user", "default"];
+    const sampleUserIds = ["demo-user", "default", "1235903"];
     
     sampleUserIds.forEach(userId => {
       // Sample habits
