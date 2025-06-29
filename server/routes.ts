@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./memStorage";
+import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { analyzeJournalEntries, generateDailyReflection } from "./openai";
+import { analyzeJournalEntries, generateDailyReflection, analyzeVoiceNotes, generateAdviceFromVoiceNotes } from "./openai";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -474,6 +474,258 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching habit analytics:", error);
       res.status(500).json({ message: "Failed to fetch habit analytics" });
+    }
+  });
+
+  // Voice Notes Routes
+  app.get('/api/voice-notes', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const voiceNotes = await storage.getUserVoiceNotes(userId);
+      res.json(voiceNotes);
+    } catch (error) {
+      console.error("Error fetching voice notes:", error);
+      res.status(500).json({ message: "Failed to fetch voice notes" });
+    }
+  });
+
+  app.post('/api/voice-notes', isAuthenticated, upload.single('audio'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { title, transcription, noteType, mood, tags } = req.body;
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "Audio file is required" });
+      }
+
+      const voiceNoteData = {
+        userId,
+        title: title || null,
+        fileName: req.file.filename,
+        transcription: transcription || null,
+        noteType: noteType || 'memo',
+        mood: mood || null,
+        tags: tags ? tags.split(',').map((tag: string) => tag.trim()) : [],
+        duration: null, // Could be calculated from audio file
+      };
+
+      const voiceNote = await storage.createVoiceNote(voiceNoteData);
+      res.json(voiceNote);
+    } catch (error) {
+      console.error("Error creating voice note:", error);
+      res.status(400).json({ message: "Failed to create voice note" });
+    }
+  });
+
+  app.get('/api/voice-notes/:id/audio', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const noteId = parseInt(req.params.id);
+      const voiceNote = await storage.getVoiceNote(noteId, userId);
+      
+      if (!voiceNote) {
+        return res.status(404).json({ message: "Voice note not found" });
+      }
+
+      const filePath = path.join(__dirname, '..', 'uploads', voiceNote.fileName);
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        res.status(404).json({ message: "Audio file not found" });
+      }
+    } catch (error) {
+      console.error("Error serving audio:", error);
+      res.status(500).json({ message: "Failed to serve audio" });
+    }
+  });
+
+  app.delete('/api/voice-notes/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const noteId = parseInt(req.params.id);
+      const success = await storage.deleteVoiceNote(noteId, userId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Voice note not found" });
+      }
+      
+      res.json({ message: "Voice note deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting voice note:", error);
+      res.status(500).json({ message: "Failed to delete voice note" });
+    }
+  });
+
+  app.post('/api/voice-notes/:id/convert-to-journal', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const noteId = parseInt(req.params.id);
+      const voiceNote = await storage.getVoiceNote(noteId, userId);
+      
+      if (!voiceNote) {
+        return res.status(404).json({ message: "Voice note not found" });
+      }
+
+      if (voiceNote.noteType !== 'journal_draft') {
+        return res.status(400).json({ message: "Only journal draft notes can be converted" });
+      }
+
+      // Create journal entry from voice note
+      const journalEntryData = {
+        userId,
+        title: voiceNote.title || "Voice Note Entry",
+        content: voiceNote.transcription || "Voice note content",
+        mood: voiceNote.mood || null,
+        tags: voiceNote.tags || [],
+      };
+
+      const journalEntry = await storage.createJournalEntry(journalEntryData);
+      
+      // Mark voice note as converted
+      await storage.updateVoiceNote(noteId, userId, { 
+        isConverted: true, 
+        journalEntryId: journalEntry.id 
+      });
+
+      res.json({ 
+        message: "Voice note converted to journal entry", 
+        journalEntry 
+      });
+    } catch (error) {
+      console.error("Error converting voice note:", error);
+      res.status(500).json({ message: "Failed to convert voice note" });
+    }
+  });
+
+  // AI Insights for Voice Notes
+  app.get('/api/voice-notes/ai-insights', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const voiceNotes = await storage.getUserVoiceNotes(userId);
+      
+      if (voiceNotes.length === 0) {
+        return res.json([]);
+      }
+
+      // Generate AI insights using OpenAI
+      const insights = await analyzeVoiceNotes(voiceNotes);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+      res.status(500).json({ message: "Failed to generate AI insights" });
+    }
+  });
+
+  // Voice Clone Routes
+  app.get('/api/voice-clones', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const voiceClones = await storage.getUserVoiceClones(userId);
+      res.json(voiceClones);
+    } catch (error) {
+      console.error("Error fetching voice clones:", error);
+      res.status(500).json({ message: "Failed to fetch voice clones" });
+    }
+  });
+
+  app.post('/api/voice-clones', isAuthenticated, upload.array('samples', 10), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { name } = req.body;
+      
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: "Audio samples are required" });
+      }
+
+      // Create voice clone with ElevenLabs
+      const { elevenLabsService } = await import('./elevenlabs');
+      
+      const audioFiles = req.files.map((file: any) => 
+        new File([fs.readFileSync(file.path)], file.filename, { type: file.mimetype })
+      );
+
+      const cloneResult = await elevenLabsService.cloneVoice({
+        name,
+        files: audioFiles,
+        description: `Voice clone for user ${userId}`,
+      });
+
+      // Save voice clone to database
+      const voiceCloneData = {
+        userId,
+        voiceId: cloneResult.voice_id,
+        voiceName: name,
+        sampleCount: req.files.length,
+        isActive: false,
+      };
+
+      const voiceClone = await storage.createUserVoiceClone(voiceCloneData);
+      res.json(voiceClone);
+    } catch (error) {
+      console.error("Error creating voice clone:", error);
+      res.status(400).json({ message: "Failed to create voice clone" });
+    }
+  });
+
+  // Future Me Advice
+  app.post('/api/voice-notes/future-me-advice', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const voiceNotes = await storage.getUserVoiceNotes(userId);
+      const activeVoiceClone = await storage.getActiveUserVoiceClone(userId);
+      
+      if (voiceNotes.length === 0) {
+        return res.status(400).json({ message: "No voice notes found for analysis" });
+      }
+
+      // Generate advice text using OpenAI
+      const adviceText = await generateAdviceFromVoiceNotes(voiceNotes);
+      
+      let audioUrl = null;
+      if (activeVoiceClone) {
+        try {
+          // Generate speech using voice clone
+          const { elevenLabsService } = await import('./elevenlabs');
+          const audioBuffer = await elevenLabsService.generateSpeech(
+            adviceText, 
+            activeVoiceClone.voiceId
+          );
+          
+          // Save audio file and create URL
+          const audioFileName = `advice-${Date.now()}.mp3`;
+          const audioPath = path.join(__dirname, '..', 'uploads', audioFileName);
+          fs.writeFileSync(audioPath, audioBuffer);
+          audioUrl = `/api/advice-audio/${audioFileName}`;
+        } catch (error) {
+          console.error("Error generating voice advice:", error);
+          // Continue without audio if voice generation fails
+        }
+      }
+
+      res.json({
+        text: adviceText,
+        audioUrl,
+      });
+    } catch (error) {
+      console.error("Error generating future me advice:", error);
+      res.status(500).json({ message: "Failed to generate advice" });
+    }
+  });
+
+  // Serve advice audio files
+  app.get('/api/advice-audio/:filename', isAuthenticated, async (req: any, res) => {
+    try {
+      const filename = req.params.filename;
+      const filePath = path.join(__dirname, '..', 'uploads', filename);
+      
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        res.status(404).json({ message: "Audio file not found" });
+      }
+    } catch (error) {
+      console.error("Error serving advice audio:", error);
+      res.status(500).json({ message: "Failed to serve audio" });
     }
   });
 

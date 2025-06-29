@@ -142,3 +142,102 @@ Write in a warm, supportive tone as their personal wellness coach.
     throw new Error("Failed to generate daily reflection");
   }
 }
+
+// Voice Notes AI Analysis
+export async function analyzeVoiceNotes(voiceNotes: any[]): Promise<AIInsight[]> {
+  if (voiceNotes.length === 0) {
+    return [];
+  }
+
+  const voiceContent = voiceNotes
+    .filter(note => note.transcription)
+    .map(note => `${note.title || 'Voice Note'}: ${note.transcription}`)
+    .join('\n\n');
+
+  if (!voiceContent.trim()) {
+    return [];
+  }
+
+  const prompt = `Analyze these voice notes and provide insights about patterns, mood, productivity, and growth opportunities. Focus on actionable recommendations:
+
+${voiceContent}
+
+Provide insights in JSON format with this structure:
+{
+  "insights": [
+    {
+      "category": "mood|productivity|growth|patterns",
+      "title": "Brief insight title",
+      "insight": "Detailed observation about patterns or trends",
+      "recommendation": "Specific actionable advice",
+      "confidence": 0.8
+    }
+  ]
+}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "system",
+          content: "You are FlowAI, an expert in analyzing voice notes for productivity and personal growth patterns. Provide deep, actionable insights that help users understand themselves better.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 1000,
+      temperature: 0.7,
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{"insights": []}');
+    return result.insights || [];
+  } catch (error) {
+    console.error("Error analyzing voice notes:", error);
+    return [];
+  }
+}
+
+export async function generateAdviceFromVoiceNotes(voiceNotes: any[]): Promise<string> {
+  if (voiceNotes.length === 0) {
+    return "You're just getting started with voice notes! Keep recording your thoughts and ideas, and I'll be able to give you more personalized advice as we go.";
+  }
+
+  const recentNotes = voiceNotes.slice(-10); // Last 10 notes
+  const noteContent = recentNotes
+    .filter(note => note.transcription)
+    .map(note => `${note.title || 'Voice Note'}: ${note.transcription}`)
+    .join('\n\n');
+
+  const prompt = `Based on these recent voice notes, provide advice as if you are the user's future self speaking to them. Be personal, encouraging, and specific to their experiences. Speak in first person as their future self who has learned from these experiences:
+
+${noteContent}
+
+Write a personal message from their future self (2-3 paragraphs) offering specific advice, encouragement, and insights based on their voice notes.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "system",
+          content: "You are speaking as the user's future self, offering wisdom and encouragement based on their voice notes. Be personal, specific, and genuinely helpful.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 500,
+      temperature: 0.8,
+    });
+
+    return response.choices[0].message.content?.trim() || "Keep recording your thoughts and experiences. Each voice note is a step forward in your journey of growth and self-discovery.";
+  } catch (error) {
+    console.error("Error generating future me advice:", error);
+    return "I believe in your ability to grow and learn from every experience. Trust yourself and keep moving forward.";
+  }
+}
