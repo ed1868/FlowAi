@@ -50,9 +50,27 @@ export default function Journal() {
     queryKey: ["/api/journal"],
     enabled: isAuthenticated,
     retry: false,
+    queryFn: async () => {
+      console.log("Making API call to /api/journal...");
+      const response = await fetch("/api/journal", {
+        credentials: "include",
+      });
+      console.log("API response status:", response.status);
+      console.log("API response headers:", Array.from(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("API error response:", errorText);
+        throw new Error(`${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log("API response data:", data);
+      return data;
+    },
   });
 
-  console.log("Journal data:", entries, "Loading:", isLoading, "Error:", error?.message);
+  console.log("Journal state - Auth:", isAuthenticated, "Loading:", isLoading, "Error:", error?.message, "Entries:", entries.length);
 
   // Handle unauthorized errors
   useEffect(() => {
