@@ -1,7 +1,275 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+function TimerComponent() {
+  const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes in seconds
+  const [isRunning, setIsRunning] = useState(false);
+  const [sessionType, setSessionType] = useState("deep_work");
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+
+  // Format time display
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Timer countdown effect
+  useEffect(() => {
+    let interval: number | undefined;
+    
+    if (isRunning && timeLeft > 0) {
+      interval = window.setInterval(() => {
+        setTimeLeft(time => time - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      // Timer finished
+      setIsRunning(false);
+      if (currentSessionId) {
+        completeSession(currentSessionId);
+      }
+      // Browser notification
+      if (Notification.permission === "granted") {
+        new Notification("Focus Session Complete!", {
+          body: "Great job! Your 90-minute focus session is done.",
+        });
+      }
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRunning, timeLeft, currentSessionId]);
+
+  // Request notification permission
+  useEffect(() => {
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // API calls
+  const startSessionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/sessions", {
+        startTime: new Date().toISOString(),
+        duration: 90,
+        type: sessionType,
+        completed: false,
+      });
+      return response.json();
+    },
+    onSuccess: (session) => {
+      setCurrentSessionId(session.id);
+      setIsRunning(true);
+    },
+  });
+
+  const updateSessionMutation = useMutation({
+    mutationFn: async (sessionId: number) => {
+      const response = await apiRequest("PATCH", `/api/sessions/${sessionId}`, {
+        endTime: new Date().toISOString(),
+        completed: true,
+      });
+      return response.json();
+    },
+  });
+
+  const completeSession = (sessionId: number) => {
+    updateSessionMutation.mutate(sessionId);
+    setCurrentSessionId(null);
+  };
+
+  const handleStart = () => {
+    if (timeLeft === 0) {
+      setTimeLeft(90 * 60); // Reset timer
+    }
+    startSessionMutation.mutate();
+  };
+
+  const handlePause = () => {
+    setIsRunning(false);
+  };
+
+  const handleReset = () => {
+    setIsRunning(false);
+    setTimeLeft(90 * 60);
+    if (currentSessionId) {
+      setCurrentSessionId(null);
+    }
+  };
+
+  const handleDurationChange = (minutes: number) => {
+    if (!isRunning) {
+      setTimeLeft(minutes * 60);
+    }
+  };
+
+  return (
+    <div>
+      <h3>Focus Timer</h3>
+      
+      {/* Session Type Selector */}
+      <div style={{ marginBottom: "20px" }}>
+        <label style={{ marginRight: "10px" }}>Session Type:</label>
+        <select 
+          value={sessionType} 
+          onChange={(e) => setSessionType(e.target.value)}
+          disabled={isRunning}
+          style={{ padding: "5px", backgroundColor: "#333", color: "#fff", border: "1px solid #555" }}
+        >
+          <option value="deep_work">Deep Work</option>
+          <option value="study">Study</option>
+          <option value="reading">Reading</option>
+          <option value="writing">Writing</option>
+          <option value="creative">Creative</option>
+        </select>
+      </div>
+
+      {/* Duration Presets */}
+      <div style={{ marginBottom: "20px" }}>
+        <label style={{ marginRight: "10px" }}>Duration:</label>
+        {[25, 45, 90].map(minutes => (
+          <button
+            key={minutes}
+            onClick={() => handleDurationChange(minutes)}
+            disabled={isRunning}
+            style={{
+              margin: "0 5px",
+              padding: "5px 10px",
+              backgroundColor: timeLeft === minutes * 60 ? "#444" : "#222",
+              color: "#fff",
+              border: "1px solid #555",
+              cursor: isRunning ? "not-allowed" : "pointer"
+            }}
+          >
+            {minutes}m
+          </button>
+        ))}
+      </div>
+
+      {/* Timer Display */}
+      <div style={{ 
+        fontSize: "48px", 
+        fontFamily: "monospace", 
+        textAlign: "center", 
+        margin: "30px 0",
+        padding: "20px",
+        backgroundColor: "#222",
+        border: "2px solid #444",
+        borderRadius: "10px"
+      }}>
+        {formatTime(timeLeft)}
+      </div>
+
+      {/* Progress Bar */}
+      <div style={{ 
+        width: "100%", 
+        height: "20px", 
+        backgroundColor: "#333", 
+        borderRadius: "10px", 
+        marginBottom: "20px",
+        overflow: "hidden"
+      }}>
+        <div style={{
+          width: `${100 - (timeLeft / (90 * 60)) * 100}%`,
+          height: "100%",
+          backgroundColor: "#4CAF50",
+          transition: "width 1s ease"
+        }} />
+      </div>
+
+      {/* Control Buttons */}
+      <div style={{ textAlign: "center" }}>
+        {!isRunning ? (
+          <button
+            onClick={handleStart}
+            disabled={startSessionMutation.isPending}
+            style={{
+              padding: "15px 30px",
+              fontSize: "18px",
+              backgroundColor: "#4CAF50",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              marginRight: "10px"
+            }}
+          >
+            {timeLeft === 90 * 60 ? "Start" : "Resume"}
+          </button>
+        ) : (
+          <button
+            onClick={handlePause}
+            style={{
+              padding: "15px 30px",
+              fontSize: "18px",
+              backgroundColor: "#FF9800",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              marginRight: "10px"
+            }}
+          >
+            Pause
+          </button>
+        )}
+        
+        <button
+          onClick={handleReset}
+          style={{
+            padding: "15px 30px",
+            fontSize: "18px",
+            backgroundColor: "#f44336",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer"
+          }}
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* Session Status */}
+      {currentSessionId && (
+        <div style={{ 
+          marginTop: "20px", 
+          padding: "10px", 
+          backgroundColor: "#1a4d2e", 
+          border: "1px solid #4CAF50",
+          borderRadius: "5px",
+          textAlign: "center"
+        }}>
+          Session Active - Stay focused! 🎯
+        </div>
+      )}
+
+      {/* Instructions */}
+      <div style={{ 
+        marginTop: "30px", 
+        padding: "15px", 
+        backgroundColor: "#1a1a1a", 
+        border: "1px solid #333",
+        borderRadius: "5px"
+      }}>
+        <h4>How to use:</h4>
+        <ul style={{ paddingLeft: "20px" }}>
+          <li>Choose your session type and duration</li>
+          <li>Click Start to begin your focus session</li>
+          <li>Stay focused until the timer completes</li>
+          <li>You'll get a notification when time is up</li>
+          <li>Sessions are automatically saved to your history</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 function Dashboard() {
   const { user } = useAuth();
@@ -10,7 +278,7 @@ function Dashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case "timer":
-        return <div>Timer content will go here</div>;
+        return <TimerComponent />;
       case "journal":
         return <div>Journal content will go here</div>;
       case "voice-notes":
