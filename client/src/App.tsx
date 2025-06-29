@@ -260,63 +260,74 @@ function TimerComponent() {
   };
 
   return (
-    <div>
-      <h3>Focus Timer</h3>
-      
-      {/* Workflow Method Selector */}
-      <div style={{ marginBottom: "20px" }}>
-        <label style={{ marginRight: "10px" }}>Workflow Method:</label>
-        <select 
-          value={workflow} 
-          onChange={(e) => setWorkflow(e.target.value)}
-          style={{ 
-            padding: "5px", 
-            marginRight: "20px", 
-            backgroundColor: "#333", 
-            color: "#fff", 
-            border: "1px solid #555",
-            borderRadius: "3px"
-          }}
-        >
-          <option value="standard">Standard</option>
-          <option value="pomodoro">Pomodoro</option>
-          <option value="ultradian">Ultradian</option>
-          <option value="flowtime">Flowtime</option>
-        </select>
+    <div className="min-h-screen pt-24 pb-8 px-4 md:px-8">
+      <div className="max-w-4xl mx-auto">
         
-        <label style={{ marginRight: "10px" }}>Session Type:</label>
-        <select 
-          value={sessionType} 
-          onChange={(e) => setSessionType(e.target.value)}
-          style={{ 
-            padding: "5px", 
-            backgroundColor: "#333", 
-            color: "#fff", 
-            border: "1px solid #555",
-            borderRadius: "3px"
-          }}
-        >
-          <option value="deep_work">Deep Work</option>
-          <option value="study">Study</option>
-          <option value="reading">Reading</option>
-          <option value="writing">Writing</option>
-          <option value="creative">Creative</option>
-        </select>
-      </div>
-
-      {/* Workflow Description */}
-      <div style={{ marginBottom: "20px", fontStyle: "italic", color: "#ccc" }}>
-        {getWorkflowDescription()}
-      </div>
-
-      {/* Pomodoro Status */}
-      {workflow === "pomodoro" && (
-        <div style={{ marginBottom: "20px", padding: "10px", backgroundColor: "#2a2a2a", borderRadius: "5px" }}>
-          <div>Session: {pomodoroSession}/4</div>
-          <div>Status: {isOnBreak ? "Break Time" : "Work Time"}</div>
-          <div>Completed Cycles: {completedCycles}</div>
+        {/* Header Section */}
+        <div className="text-center mb-8 animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-4">
+            Focus Timer
+          </h1>
+          <p className="text-text-secondary text-lg max-w-2xl mx-auto">
+            {getWorkflowDescription()}
+          </p>
         </div>
-      )}
+        
+        {/* Workflow Controls */}
+        <div className="glass-card rounded-2xl p-6 mb-8 animate-slide-up">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-secondary">Workflow Method</label>
+              <select 
+                value={workflow} 
+                onChange={(e) => setWorkflow(e.target.value)}
+                className="w-full glass-button px-4 py-3 rounded-xl text-text-primary focus-ring bg-dark-2 border border-glass-border"
+              >
+                <option value="standard">⚡ Standard</option>
+                <option value="pomodoro">🍅 Pomodoro</option>
+                <option value="ultradian">🔄 Ultradian</option>
+                <option value="flowtime">🌊 Flowtime</option>
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-secondary">Session Type</label>
+              <select 
+                value={sessionType} 
+                onChange={(e) => setSessionType(e.target.value)}
+                className="w-full glass-button px-4 py-3 rounded-xl text-text-primary focus-ring bg-dark-2 border border-glass-border"
+              >
+                <option value="deep_work">🧠 Deep Work</option>
+                <option value="study">📚 Study</option>
+                <option value="reading">📖 Reading</option>
+                <option value="writing">✍️ Writing</option>
+                <option value="creative">🎨 Creative</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Pomodoro Status */}
+        {workflow === "pomodoro" && (
+          <div className="glass-card rounded-2xl p-6 mb-8 animate-glow">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-apple-blue">{pomodoroSession}/4</div>
+                <div className="text-sm text-text-secondary">Session</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-lg font-semibold text-apple-green">
+                  {isOnBreak ? "☕ Break Time" : "🎯 Work Time"}
+                </div>
+                <div className="text-sm text-text-secondary">Status</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-apple-purple">{completedCycles}</div>
+                <div className="text-sm text-text-secondary">Completed</div>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Duration Selector */}
       <div style={{ marginBottom: "20px" }}>
@@ -566,6 +577,7 @@ function TimerComponent() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
