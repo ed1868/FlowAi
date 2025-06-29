@@ -356,8 +356,9 @@ export default function VoiceNotesNew() {
   };
 
   return (
-    <div className="space-y-8 pb-8">
-      <div className="flex items-center justify-between">
+    <div className="min-h-screen pt-24 pb-8 px-4 md:px-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold gradient-text">Voice Studio</h1>
           <p className="text-text-secondary mt-2">
@@ -573,9 +574,9 @@ export default function VoiceNotesNew() {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
+        </div>
 
-      {/* Main Content Tabs */}
+        {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="glass-tabs">
           <TabsTrigger value="notes" className="glass-tab">
@@ -940,6 +941,7 @@ export default function VoiceNotesNew() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
