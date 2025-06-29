@@ -60,7 +60,7 @@ export const journalEntries = pgTable("journal_entries", {
   title: varchar("title"),
   content: text("content").notNull(),
   mood: varchar("mood"), // 'great', 'good', 'neutral', 'bad', 'terrible'
-  tags: jsonb("tags").$type<string[]>(),
+  tags: jsonb("tags").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
