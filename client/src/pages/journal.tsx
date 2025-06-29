@@ -43,6 +43,8 @@ export default function Journal() {
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  console.log("Journal rendering - isAuthenticated:", isAuthenticated, "authLoading:", authLoading);
+
   // Get journal entries
   const { data: entries = [], isLoading, error } = useQuery<JournalEntry[]>({
     queryKey: ["/api/journal"],
@@ -50,12 +52,7 @@ export default function Journal() {
     retry: false,
   });
 
-  // Debug: Log authentication state and errors
-  useEffect(() => {
-    console.log("Journal page - Auth state:", { isAuthenticated, authLoading, error: error?.message });
-    console.log("Journal entries data:", entries);
-    console.log("Loading state:", isLoading);
-  }, [isAuthenticated, authLoading, error, entries, isLoading]);
+  console.log("Journal data:", entries, "Loading:", isLoading, "Error:", error?.message);
 
   // Handle unauthorized errors
   useEffect(() => {
@@ -86,361 +83,63 @@ export default function Journal() {
     }
   }, [error, toast]);
 
-  // Create entry mutation
-  const createEntryMutation = useMutation({
-    mutationFn: async (entryData: any) => {
-      const response = await apiRequest("POST", "/api/journal", entryData);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
-      resetForm();
-      toast({
-        title: "Entry Created",
-        description: "Your journal entry has been saved successfully!",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to create journal entry",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Update entry mutation
-  const updateEntryMutation = useMutation({
-    mutationFn: async ({ entryId, updateData }: { entryId: number; updateData: any }) => {
-      const response = await apiRequest("PATCH", `/api/journal/${entryId}`, updateData);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
-      resetForm();
-      toast({
-        title: "Entry Updated",
-        description: "Your journal entry has been updated successfully!",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to update journal entry",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete entry mutation
-  const deleteEntryMutation = useMutation({
-    mutationFn: async (entryId: number) => {
-      const response = await apiRequest("DELETE", `/api/journal/${entryId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/journal"] });
-      toast({
-        title: "Entry Deleted",
-        description: "Your journal entry has been deleted.",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to delete journal entry",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const resetForm = () => {
-    setTitle("");
-    setContent("");
-    setMood("");
-    setTags("");
-    setEditingEntry(null);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!content.trim()) {
-      toast({
-        title: "Content Required",
-        description: "Please write something in your journal entry",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const entryData = {
-      title: title.trim() || undefined,
-      content: content.trim(),
-      mood: mood || undefined,
-      tags: tags ? tags.split(",").map(tag => tag.trim()).filter(Boolean) : undefined,
-    };
-
-    if (editingEntry) {
-      updateEntryMutation.mutate({
-        entryId: editingEntry.id,
-        updateData: entryData,
-      });
-    } else {
-      createEntryMutation.mutate(entryData);
-    }
-  };
-
-  const editEntry = (entry: JournalEntry) => {
-    setEditingEntry(entry);
-    setTitle(entry.title || "");
-    setContent(entry.content);
-    setMood(entry.mood || "");
-    setTags(entry.tags?.join(", ") || "");
-  };
-
-  const deleteEntry = (entryId: number) => {
-    if (confirm("Are you sure you want to delete this entry?")) {
-      deleteEntryMutation.mutate(entryId);
-    }
-  };
-
-  // Filter entries based on search
-  const filteredEntries = entries.filter(entry =>
-    entry.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-dark-1">
-        <Card className="glass-card rounded-3xl p-8">
-          <CardContent className="p-0">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-apple-blue mx-auto"></div>
-            <p className="text-text-secondary mt-4">Loading journal...</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-dark-1 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-apple-blue mx-auto"></div>
+          <p className="text-text-secondary mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-dark-1 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p>Please log in to access the journal.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-dark-1 text-text-primary pt-20 pb-8">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 gradient-text">Journal</h1>
-          <p className="text-xl text-text-secondary">
-            Capture your thoughts, insights, and reflections
-          </p>
-        </div>
+    <div className="min-h-screen bg-dark-1 text-white p-4">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Journal</h1>
+        
+        {/* Basic functionality test */}
+        <Card className="glass-card rounded-2xl mb-8">
+          <CardHeader>
+            <CardTitle>Journal Test</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Authentication: {isAuthenticated ? 'Yes' : 'No'}</p>
+            <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
+            <p>Entries count: {entries.length}</p>
+            <p>Error: {error?.message || 'None'}</p>
+          </CardContent>
+        </Card>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Entry Form */}
-          <Card className="glass-card rounded-3xl p-6">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                <span>{editingEntry ? "Edit Entry" : "New Entry"}</span>
-                {editingEntry && (
-                  <Button variant="ghost" size="sm" onClick={resetForm}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Input
-                    placeholder="Entry title (optional)"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="glass-button border-none focus:ring-2 focus:ring-apple-blue"
-                  />
-                </div>
-
-                <div className="flex gap-4">
-                  <Select value={mood} onValueChange={setMood}>
-                    <SelectTrigger className="glass-button border-none w-32">
-                      <SelectValue placeholder="Mood" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {moodOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <span className="flex items-center gap-2">
-                            <span>{option.emoji}</span>
-                            <span>{option.label}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Input
-                    placeholder="Tags (comma separated)"
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
-                    className="glass-button border-none focus:ring-2 focus:ring-apple-blue flex-1"
-                  />
-                </div>
-
-                <div>
-                  <Textarea
-                    placeholder="What's on your mind today?"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    rows={12}
-                    className="glass-button border-none focus:ring-2 focus:ring-apple-blue resize-none"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-apple-blue hover:bg-apple-blue/80 text-white"
-                    disabled={createEntryMutation.isPending || updateEntryMutation.isPending}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {editingEntry ? "Update Entry" : "Save Entry"}
-                  </Button>
-                  
-                  {editingEntry && (
-                    <Button type="button" variant="outline" onClick={resetForm}>
-                      Cancel
-                    </Button>
-                  )}
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Entries List */}
-          <div className="space-y-6">
-            {/* Search */}
-            <Card className="glass-card rounded-2xl p-4">
-              <CardContent className="p-0">
-                <div className="relative">
-                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary" />
-                  <Input
-                    placeholder="Search entries..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 glass-button border-none focus:ring-2 focus:ring-apple-blue"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Entries */}
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {filteredEntries.length > 0 ? (
-                filteredEntries.map((entry) => {
-                  const selectedMood = moodOptions.find(m => m.value === entry.mood);
-                  
-                  return (
-                    <Card key={entry.id} className="glass-card rounded-2xl p-4">
-                      <CardContent className="p-0">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            {entry.title && (
-                              <h3 className="font-semibold text-lg mb-1">{entry.title}</h3>
-                            )}
-                            <div className="flex items-center gap-3 text-sm text-text-tertiary">
-                              <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
-                              {selectedMood && (
-                                <span className={`flex items-center gap-1 ${selectedMood.color}`}>
-                                  <span>{selectedMood.emoji}</span>
-                                  <span>{selectedMood.label}</span>
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => editEntry(entry)}
-                              className="text-apple-blue hover:text-apple-indigo"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteEntry(entry.id)}
-                              className="text-apple-red hover:text-red-400"
-                              disabled={deleteEntryMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        <p className="text-text-secondary leading-relaxed mb-3 line-clamp-3">
-                          {entry.content}
-                        </p>
-                        
-                        {entry.tags && entry.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {entry.tags.map((tag, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              ) : (
-                <Card className="glass-card rounded-2xl p-8">
-                  <CardContent className="p-0 text-center">
-                    <BookOpen className="h-12 w-12 text-text-tertiary mb-4 mx-auto" />
-                    <h3 className="text-lg font-semibold mb-2">No entries found</h3>
-                    <p className="text-text-tertiary">
-                      {searchTerm ? "Try a different search term" : "Start writing your first journal entry"}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+        {/* Show entries if available */}
+        {entries.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Your Entries</h2>
+            {entries.map((entry) => (
+              <Card key={entry.id} className="glass-card rounded-2xl">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold">{entry.title || 'Untitled'}</h3>
+                  <p className="text-text-secondary">{entry.content}</p>
+                  <p className="text-sm text-text-tertiary mt-2">
+                    {new Date(entry.createdAt).toLocaleDateString()}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
