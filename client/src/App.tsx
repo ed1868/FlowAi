@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Navigation from "@/components/navigation";
+import { Switch, Route } from "wouter";
+import Journal from "@/pages/journal";
 
 function TimerComponent() {
   const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes in seconds
@@ -650,7 +652,19 @@ function AppContent() {
   return (
     <div>
       <Navigation />
-      <TimerComponent />
+      <Switch>
+        <Route path="/" component={TimerComponent} />
+        <Route path="/timer" component={TimerComponent} />
+        <Route path="/journal" component={Journal} />
+        <Route>
+          <div className="min-h-screen pt-24 pb-8 px-4 md:px-8">
+            <div className="max-w-4xl mx-auto text-center">
+              <h1 className="text-4xl font-bold gradient-text mb-4">Page Not Found</h1>
+              <p className="text-text-secondary">The page you're looking for doesn't exist.</p>
+            </div>
+          </div>
+        </Route>
+      </Switch>
     </div>
   );
 }
