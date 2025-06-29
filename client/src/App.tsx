@@ -32,6 +32,50 @@ function TimerComponent() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handlePomodoroComplete = () => {
+    if (isOnBreak) {
+      // Break finished, start next work session
+      setIsOnBreak(false);
+      setPomodoroSession(prev => prev + 1);
+      setTimeLeft(25 * 60); // 25 minutes work
+      
+      if (Notification.permission === "granted") {
+        new Notification("Break Complete!", {
+          body: `Time to focus! Starting Pomodoro session ${pomodoroSession + 1}`,
+        });
+      }
+    } else {
+      // Work session finished
+      setCompletedCycles(prev => prev + 1);
+      
+      if (pomodoroSession === 4) {
+        // After 4 sessions, take longer break
+        setTimeLeft(30 * 60); // 30 minute long break
+        setPomodoroSession(1);
+        if (Notification.permission === "granted") {
+          new Notification("Long Break Time!", {
+            body: "You've completed 4 Pomodoro sessions! Take a 30-minute break.",
+          });
+        }
+      } else {
+        // Regular 5-minute break
+        setTimeLeft(5 * 60); // 5 minute break
+        if (Notification.permission === "granted") {
+          new Notification("Break Time!", {
+            body: "Great work! Take a 5-minute break.",
+          });
+        }
+      }
+      
+      setIsOnBreak(true);
+      
+      // Show completion form for work sessions
+      if (currentSessionId) {
+        setShowCompletionForm(true);
+      }
+    }
+  };
+
   // Timer countdown effect
   useEffect(() => {
     let interval: number | undefined;
@@ -135,49 +179,7 @@ function TimerComponent() {
     setShowCompletionForm(true);
   };
 
-  const handlePomodoroComplete = () => {
-    if (isOnBreak) {
-      // Break finished, start next work session
-      setIsOnBreak(false);
-      setPomodoroSession(prev => prev + 1);
-      setTimeLeft(25 * 60); // 25 minutes work
-      
-      if (Notification.permission === "granted") {
-        new Notification("Break Complete!", {
-          body: `Time to focus! Starting Pomodoro session ${pomodoroSession + 1}`,
-        });
-      }
-    } else {
-      // Work session finished
-      setCompletedCycles(prev => prev + 1);
-      
-      if (pomodoroSession === 4) {
-        // After 4 sessions, take longer break
-        setTimeLeft(30 * 60); // 30 minute long break
-        setPomodoroSession(1);
-        if (Notification.permission === "granted") {
-          new Notification("Long Break Time!", {
-            body: "You've completed 4 Pomodoro sessions! Take a 30-minute break.",
-          });
-        }
-      } else {
-        // Regular 5-minute break
-        setTimeLeft(5 * 60); // 5 minute break
-        if (Notification.permission === "granted") {
-          new Notification("Break Time!", {
-            body: "Great work! Take a 5-minute break.",
-          });
-        }
-      }
-      
-      setIsOnBreak(true);
-      
-      // Show completion form for work sessions
-      if (currentSessionId) {
-        setShowCompletionForm(true);
-      }
-    }
-  };
+
 
   const handleStart = () => {
     if (timeLeft === 0) {
