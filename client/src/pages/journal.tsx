@@ -53,7 +53,9 @@ export default function Journal() {
   // Debug: Log authentication state and errors
   useEffect(() => {
     console.log("Journal page - Auth state:", { isAuthenticated, authLoading, error: error?.message });
-  }, [isAuthenticated, authLoading, error]);
+    console.log("Journal entries data:", entries);
+    console.log("Loading state:", isLoading);
+  }, [isAuthenticated, authLoading, error, entries, isLoading]);
 
   // Handle unauthorized errors
   useEffect(() => {
