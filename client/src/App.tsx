@@ -1,63 +1,128 @@
-import React from "react";
-import { Switch, Route } from "wouter";
+import React, { useState } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import NotFound from "@/pages/not-found";
-import Landing from "@/pages/landing";
-import Dashboard from "@/pages/dashboard";
-import Timer from "@/pages/timer";
-import Journal from "@/pages/journal";
-import VoiceNotes from "@/pages/voice-notes";
-import Habits from "@/pages/habits";
-import Analytics from "@/pages/analytics";
-import Navigation from "@/components/navigation";
 
-function Router() {
-  const { isAuthenticated, isLoading, user, refetch } = useAuth();
+function Dashboard() {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("dashboard");
+  
+  const renderContent = () => {
+    switch (activeTab) {
+      case "timer":
+        return <div>Timer content will go here</div>;
+      case "journal":
+        return <div>Journal content will go here</div>;
+      case "voice-notes":
+        return <div>Voice Notes content will go here</div>;
+      case "habits":
+        return <div>Habits content will go here</div>;
+      case "analytics":
+        return <div>Analytics content will go here</div>;
+      default:
+        return <div>Welcome to your Flow dashboard!</div>;
+    }
+  };
+  
+  return (
+    <div style={{ padding: "20px", backgroundColor: "#000", color: "#fff", minHeight: "100vh" }}>
+      <div style={{ borderBottom: "1px solid #333", paddingBottom: "20px", marginBottom: "20px" }}>
+        <h1>Flow Dashboard</h1>
+        <p>Welcome, {user?.firstName || user?.email || "User"}!</p>
+        <a href="/api/logout" style={{ color: "#fff", textDecoration: "underline" }}>
+          Logout
+        </a>
+      </div>
+      
+      <div style={{ marginBottom: "30px" }}>
+        <nav>
+          {["dashboard", "timer", "journal", "voice-notes", "habits", "analytics"].map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{ 
+                margin: "5px", 
+                padding: "10px 15px", 
+                backgroundColor: activeTab === tab ? "#444" : "#222", 
+                color: "#fff", 
+                border: "1px solid #555",
+                cursor: "pointer"
+              }}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1).replace("-", " ")}
+            </button>
+          ))}
+        </nav>
+      </div>
+      
+      <div style={{ padding: "20px", backgroundColor: "#111", border: "1px solid #333" }}>
+        <h2>Current Tab: {activeTab}</h2>
+        {renderContent()}
+      </div>
+    </div>
+  );
+}
 
+function Landing() {
+  return (
+    <div style={{ 
+      padding: "20px", 
+      backgroundColor: "#000", 
+      color: "#fff", 
+      minHeight: "100vh", 
+      textAlign: "center",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center"
+    }}>
+      <h1>Welcome to Flow</h1>
+      <p style={{ marginBottom: "30px" }}>Please log in to access your productivity dashboard.</p>
+      <a 
+        href="/api/login" 
+        style={{ 
+          color: "#fff", 
+          textDecoration: "none", 
+          fontSize: "18px",
+          backgroundColor: "#333",
+          padding: "10px 20px",
+          borderRadius: "5px",
+          border: "1px solid #555"
+        }}
+      >
+        Log In
+      </a>
+    </div>
+  );
+}
 
+function AppContent() {
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-dark-1">
-        <div className="glass-card rounded-3xl p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-apple-blue mx-auto"></div>
-          <p className="text-text-secondary mt-4">Loading...</p>
-        </div>
+      <div style={{ 
+        padding: "20px", 
+        backgroundColor: "#000", 
+        color: "#fff", 
+        minHeight: "100vh", 
+        textAlign: "center",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center"
+      }}>
+        <p>Loading...</p>
       </div>
     );
   }
 
-  return (
-    <Switch>
-      {!isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Navigation />
-          <Route path="/" component={Dashboard} />
-          <Route path="/timer" component={Timer} />
-          <Route path="/journal" component={Journal} />
-          <Route path="/voice-notes" component={VoiceNotes} />
-          <Route path="/habits" component={Habits} />
-          <Route path="/analytics" component={Analytics} />
-        </>
-      )}
-      <Route component={NotFound} />
-    </Switch>
-  );
+  return isAuthenticated ? <Dashboard /> : <Landing />;
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AppContent />
     </QueryClientProvider>
   );
 }
