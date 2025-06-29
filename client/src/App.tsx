@@ -9,7 +9,16 @@ function TimerComponent() {
   const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes in seconds
   const [isRunning, setIsRunning] = useState(false);
   const [sessionType, setSessionType] = useState("deep_work");
+  const [workflow, setWorkflow] = useState("standard");
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  
+  // Session completion form
+  const [showCompletionForm, setShowCompletionForm] = useState(false);
+  const [mood, setMood] = useState("");
+  const [setbacks, setSetbacks] = useState("");
+  const [notes, setNotes] = useState("");
+  const [productivity, setProductivity] = useState(5);
 
   // Format time display
   const formatTime = (seconds: number) => {

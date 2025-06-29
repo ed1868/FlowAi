@@ -259,9 +259,15 @@ export class MemStorage implements IStorage {
       userId: session.userId,
       startTime: session.startTime,
       endTime: session.endTime || null,
-      duration: session.duration || null,
+      plannedDuration: session.plannedDuration || null,
+      actualDuration: session.actualDuration || null,
       type: session.type || null,
-      completed: session.completed || null,
+      workflow: session.workflow || "standard",
+      completed: session.completed || false,
+      mood: session.mood || null,
+      setbacks: session.setbacks || null,
+      notes: session.notes || null,
+      productivity: session.productivity || null,
       createdAt: new Date(),
     };
     this.focusSessions.set(id, newSession);

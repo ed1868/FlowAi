@@ -41,9 +41,15 @@ export const focusSessions = pgTable("focus_sessions", {
   userId: varchar("user_id").notNull().references(() => users.id),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
-  duration: integer("duration"), // in minutes
-  type: varchar("type").default("deep_work"), // 'deep_work', 'break'
+  plannedDuration: integer("planned_duration"), // in minutes
+  actualDuration: integer("actual_duration"), // in minutes (when completed)
+  type: varchar("type").default("deep_work"), // 'deep_work', 'study', 'reading', 'writing', 'creative'
+  workflow: varchar("workflow").default("standard"), // 'standard', 'pomodoro', 'ultradian', 'flowtime'
   completed: boolean("completed").default(false),
+  mood: varchar("mood"), // 'energized', 'focused', 'tired', 'distracted', 'stressed', 'calm'
+  setbacks: text("setbacks"), // description of interruptions or challenges
+  notes: text("notes"), // general session notes
+  productivity: integer("productivity"), // 1-10 scale
   createdAt: timestamp("created_at").defaultNow(),
 });
 
