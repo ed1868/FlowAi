@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import Navigation from "@/components/navigation";
 
 function TimerComponent() {
   const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes in seconds
@@ -329,126 +330,84 @@ function TimerComponent() {
           </div>
         )}
 
-      {/* Duration Selector */}
-      <div style={{ marginBottom: "20px" }}>
-        <label style={{ marginRight: "10px" }}>Duration:</label>
-        {getWorkflowDurations().map(minutes => (
-          <button
-            key={minutes}
-            onClick={() => handleDurationChange(minutes)}
-            disabled={isRunning}
-            style={{
-              padding: "5px 10px",
-              margin: "0 5px",
-              backgroundColor: timeLeft === minutes * 60 ? "#4CAF50" : "#333",
-              color: "#fff",
-              border: "none",
-              borderRadius: "3px",
-              cursor: isRunning ? "not-allowed" : "pointer"
-            }}
-          >
-            {minutes}m
-          </button>
-        ))}
-      </div>
+        {/* Duration Selector */}
+        <div className="glass-card rounded-2xl p-6 mb-8">
+          <h3 className="text-lg font-semibold text-text-secondary mb-4">Duration</h3>
+          <div className="flex flex-wrap gap-3">
+            {getWorkflowDurations().map(minutes => (
+              <button
+                key={minutes}
+                onClick={() => handleDurationChange(minutes)}
+                disabled={isRunning}
+                className={`px-4 py-2 rounded-xl transition-all glass-button ${
+                  timeLeft === minutes * 60 
+                    ? 'bg-apple-blue text-white shadow-lg shadow-apple-blue/30' 
+                    : 'text-text-secondary hover:text-text-primary'
+                } ${isRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}
+              >
+                {minutes}m
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* Timer Display */}
-      <div style={{
-        fontSize: "48px",
-        fontWeight: "bold",
-        textAlign: "center",
-        marginBottom: "20px",
-        color: timeLeft < 300 ? "#ff6b6b" : "#4CAF50" // Red when < 5 minutes
-      }}>
-        {formatTime(timeLeft)}
-      </div>
+        {/* Timer Display */}
+        <div className="glass-card rounded-3xl p-8 mb-8 text-center animate-float">
+          <div className={`timer-display text-6xl md:text-8xl font-light mb-6 ${
+            timeLeft < 300 ? 'text-apple-red animate-glow' : 'text-apple-green'
+          }`}>
+            {formatTime(timeLeft)}
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="progress-bar h-3 w-full mb-4">
+            <div 
+              className="progress-fill h-full rounded-full"
+              style={{
+                width: sessionStartTime ? `${100 - (timeLeft / (workflow === "pomodoro" ? 25 * 60 : 90 * 60)) * 100}%` : "0%"
+              }}
+            />
+          </div>
+          
+          <div className="text-text-secondary text-sm">
+            {isRunning ? '⏱️ Session in progress' : '⏸️ Ready to start'}
+          </div>
+        </div>
 
-      {/* Progress Bar */}
-      <div style={{ 
-        width: "100%", 
-        height: "20px", 
-        backgroundColor: "#333", 
-        borderRadius: "10px", 
-        marginBottom: "20px",
-        overflow: "hidden"
-      }}>
-        <div style={{
-          width: sessionStartTime ? `${100 - (timeLeft / (workflow === "pomodoro" ? 25 * 60 : 90 * 60)) * 100}%` : "0%",
-          height: "100%",
-          backgroundColor: "#4CAF50",
-          transition: "width 1s ease"
-        }} />
-      </div>
+        {/* Timer Controls */}
+        <div className="flex justify-center gap-4 mb-8">
+          {!isRunning ? (
+            <button
+              onClick={handleStart}
+              className="px-8 py-4 text-lg font-semibold text-white bg-apple-green rounded-2xl glass-button hover:scale-105 transition-all shadow-lg shadow-apple-green/30"
+            >
+              ▶️ Start Session
+            </button>
+          ) : (
+            <button
+              onClick={handlePause}
+              className="px-8 py-4 text-lg font-semibold text-white bg-apple-orange rounded-2xl glass-button hover:scale-105 transition-all shadow-lg shadow-apple-orange/30"
+            >
+              ⏸️ Pause
+            </button>
+          )}
+          
+          <button
+            onClick={handleReset}
+            className="px-8 py-4 text-lg font-semibold text-white bg-apple-red rounded-2xl glass-button hover:scale-105 transition-all shadow-lg shadow-apple-red/30"
+          >
+            🔄 Reset
+          </button>
 
-      {/* Timer Controls */}
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
-        {!isRunning ? (
-          <button
-            onClick={handleStart}
-            style={{
-              padding: "15px 30px",
-              fontSize: "18px",
-              backgroundColor: "#4CAF50",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              marginRight: "10px"
-            }}
-          >
-            Start
-          </button>
-        ) : (
-          <button
-            onClick={handlePause}
-            style={{
-              padding: "15px 30px",
-              fontSize: "18px",
-              backgroundColor: "#ff9800",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              marginRight: "10px"
-            }}
-          >
-            Pause
-          </button>
-        )}
-        
-        <button
-          onClick={handleReset}
-          style={{
-            padding: "15px 30px",
-            fontSize: "18px",
-            backgroundColor: "#f44336",
-            color: "#fff",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            marginRight: "10px"
-          }}
-        >
-          Reset
-        </button>
-
-        {currentSessionId && (
-          <button
-            onClick={() => setShowCompletionForm(true)}
-            style={{
-              padding: "15px 30px",
-              fontSize: "18px",
-              backgroundColor: "#2196F3",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer"
-            }}
-          >
-            Complete Session
-          </button>
-        )}
-      </div>
+          {currentSessionId && (
+            <button
+              onClick={() => setShowCompletionForm(true)}
+              className="px-8 py-4 text-lg font-semibold text-white bg-apple-blue rounded-2xl glass-button hover:scale-105 transition-all shadow-lg shadow-apple-blue/30"
+            >
+              ✅ Complete Session
+            </button>
+          )}
+        </div>
 
       {/* Session Completion Form */}
       {showCompletionForm && (
@@ -651,21 +610,32 @@ function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div style={{ textAlign: "center", padding: "50px" }}>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-apple-blue border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="text-text-secondary">Loading...</div>
+        </div>
+      </div>
+    );
   }
 
-  return isAuthenticated ? <Dashboard /> : <Landing />;
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
+  return (
+    <div>
+      <Navigation />
+      <TimerComponent />
+    </div>
+  );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div style={{ 
-        minHeight: "100vh", 
-        backgroundColor: "#1a1a1a", 
-        color: "#fff",
-        fontFamily: "Arial, sans-serif"
-      }}>
+      <div className="min-h-screen bg-dark-1 text-text-primary">
         <AppContent />
       </div>
     </QueryClientProvider>
