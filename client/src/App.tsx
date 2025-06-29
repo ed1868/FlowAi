@@ -15,6 +15,11 @@ function TimerComponent() {
   
   // Session completion form
   const [showCompletionForm, setShowCompletionForm] = useState(false);
+  
+  // Pomodoro cycle tracking
+  const [pomodoroSession, setPomodoroSession] = useState(1); // Current session number
+  const [isOnBreak, setIsOnBreak] = useState(false);
+  const [completedCycles, setCompletedCycles] = useState(0);
   const [mood, setMood] = useState("");
   const [setbacks, setSetbacks] = useState("");
   const [notes, setNotes] = useState("");
@@ -38,15 +43,19 @@ function TimerComponent() {
     } else if (timeLeft === 0) {
       // Timer finished
       setIsRunning(false);
-      // Browser notification
-      if (Notification.permission === "granted") {
-        new Notification("Focus Session Complete!", {
-          body: "Great job! Your focus session is done.",
-        });
-      }
-      // Show completion form
-      if (currentSessionId) {
-        setShowCompletionForm(true);
+      
+      if (workflow === "pomodoro") {
+        handlePomodoroComplete();
+      } else {
+        // Regular session completion
+        if (Notification.permission === "granted") {
+          new Notification("Focus Session Complete!", {
+            body: "Great job! Your focus session is done.",
+          });
+        }
+        if (currentSessionId) {
+          setShowCompletionForm(true);
+        }
       }
     }
 
@@ -126,6 +135,50 @@ function TimerComponent() {
     setShowCompletionForm(true);
   };
 
+  const handlePomodoroComplete = () => {
+    if (isOnBreak) {
+      // Break finished, start next work session
+      setIsOnBreak(false);
+      setPomodoroSession(prev => prev + 1);
+      setTimeLeft(25 * 60); // 25 minutes work
+      
+      if (Notification.permission === "granted") {
+        new Notification("Break Complete!", {
+          body: `Time to focus! Starting Pomodoro session ${pomodoroSession + 1}`,
+        });
+      }
+    } else {
+      // Work session finished
+      setCompletedCycles(prev => prev + 1);
+      
+      if (pomodoroSession === 4) {
+        // After 4 sessions, take longer break
+        setTimeLeft(30 * 60); // 30 minute long break
+        setPomodoroSession(1);
+        if (Notification.permission === "granted") {
+          new Notification("Long Break Time!", {
+            body: "You've completed 4 Pomodoro sessions! Take a 30-minute break.",
+          });
+        }
+      } else {
+        // Regular 5-minute break
+        setTimeLeft(5 * 60); // 5 minute break
+        if (Notification.permission === "granted") {
+          new Notification("Break Time!", {
+            body: "Great work! Take a 5-minute break.",
+          });
+        }
+      }
+      
+      setIsOnBreak(true);
+      
+      // Show completion form for work sessions
+      if (currentSessionId) {
+        setShowCompletionForm(true);
+      }
+    }
+  };
+
   const handleStart = () => {
     if (timeLeft === 0) {
       setTimeLeft(90 * 60); // Reset timer
@@ -168,26 +221,26 @@ function TimerComponent() {
   const getWorkflowDurations = () => {
     switch (workflow) {
       case "pomodoro":
-        return [25, 5]; // Work, break
+        return [25]; // 25-minute focused work sessions
       case "ultradian":
-        return [90, 20]; // Work, break
+        return [90, 120]; // 90-120 minute natural cycles
       case "flowtime":
-        return [90]; // Just work
+        return [30, 60, 90, 120]; // Flexible timing based on flow
       default:
-        return [25, 45, 90]; // Standard options
+        return [15, 30, 45, 60, 90]; // Standard options
     }
   };
 
   const getWorkflowDescription = () => {
     switch (workflow) {
       case "pomodoro":
-        return "25 minutes of focused work followed by a 5-minute break";
+        return "25-minute focused work sessions. Take 5-min breaks between sessions, 15-30min break after 4 sessions";
       case "ultradian":
-        return "90 minutes of deep work aligned with natural attention cycles";
+        return "90-120 minute cycles aligned with your natural attention rhythms. Take 20-30min breaks between cycles";
       case "flowtime":
-        return "Flexible duration based on your flow state";
+        return "Work as long as you're in flow state, then take breaks as needed. Flexible timing based on your energy";
       default:
-        return "Choose your preferred work duration";
+        return "Traditional focused work sessions with flexible timing options";
     }
   };
 
