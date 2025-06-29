@@ -47,7 +47,13 @@ export default function Journal() {
   const { data: entries = [], isLoading, error } = useQuery<JournalEntry[]>({
     queryKey: ["/api/journal"],
     enabled: isAuthenticated,
+    retry: false,
   });
+
+  // Debug: Log authentication state and errors
+  useEffect(() => {
+    console.log("Journal page - Auth state:", { isAuthenticated, authLoading, error: error?.message });
+  }, [isAuthenticated, authLoading, error]);
 
   // Handle unauthorized errors
   useEffect(() => {
