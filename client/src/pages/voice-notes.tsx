@@ -296,7 +296,7 @@ export default function VoiceNotesNew() {
     formData.append('title', title);
     formData.append('transcription', transcription);
     formData.append('noteType', noteType);
-    formData.append('mood', mood);
+    formData.append('mood', mood === 'none' ? '' : mood);
     formData.append('tags', tags);
 
     createVoiceNoteMutation.mutate(formData);
@@ -539,7 +539,7 @@ export default function VoiceNotesNew() {
                         <SelectValue placeholder="Select mood" />
                       </SelectTrigger>
                       <SelectContent className="glass-card border-glass-border">
-                        <SelectItem value="">No mood</SelectItem>
+                        <SelectItem value="none">No mood</SelectItem>
                         <SelectItem value="great">😊 Great</SelectItem>
                         <SelectItem value="good">🙂 Good</SelectItem>
                         <SelectItem value="neutral">😐 Neutral</SelectItem>
