@@ -76,6 +76,13 @@ export interface IStorage {
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
   updateUserPreferences(userId: string, updateData: Partial<InsertUserPreferences>): Promise<UserPreferences>;
   
+  // Voice clone operations
+  createUserVoiceClone(voiceClone: InsertUserVoiceClone): Promise<UserVoiceClone>;
+  getUserVoiceClones(userId: string): Promise<UserVoiceClone[]>;
+  getActiveUserVoiceClone(userId: string): Promise<UserVoiceClone | undefined>;
+  updateUserVoiceClone(voiceCloneId: number, userId: string, updateData: Partial<InsertUserVoiceClone>): Promise<UserVoiceClone | undefined>;
+  deleteUserVoiceClone(voiceCloneId: number, userId: string): Promise<boolean>;
+  
   // Analytics operations
   getDashboardAnalytics(userId: string): Promise<any>;
   getHabitAnalytics(userId: string): Promise<any>;
@@ -499,6 +506,46 @@ export class DatabaseStorage implements IStorage {
       habits: habitAnalytics,
       period: '30 days',
     };
+  }
+
+  // Voice clone operations
+  async createUserVoiceClone(voiceClone: InsertUserVoiceClone): Promise<UserVoiceClone> {
+    const [newVoiceClone] = await db
+      .insert(userVoiceClones)
+      .values(voiceClone)
+      .returning();
+    return newVoiceClone;
+  }
+
+  async getUserVoiceClones(userId: string): Promise<UserVoiceClone[]> {
+    return await db
+      .select()
+      .from(userVoiceClones)
+      .where(eq(userVoiceClones.userId, userId));
+  }
+
+  async getActiveUserVoiceClone(userId: string): Promise<UserVoiceClone | undefined> {
+    const [activeClone] = await db
+      .select()
+      .from(userVoiceClones)
+      .where(and(eq(userVoiceClones.userId, userId), eq(userVoiceClones.isActive, true)));
+    return activeClone;
+  }
+
+  async updateUserVoiceClone(voiceCloneId: number, userId: string, updateData: Partial<InsertUserVoiceClone>): Promise<UserVoiceClone | undefined> {
+    const [updatedClone] = await db
+      .update(userVoiceClones)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(userVoiceClones.id, voiceCloneId), eq(userVoiceClones.userId, userId)))
+      .returning();
+    return updatedClone;
+  }
+
+  async deleteUserVoiceClone(voiceCloneId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(userVoiceClones)
+      .where(and(eq(userVoiceClones.id, voiceCloneId), eq(userVoiceClones.userId, userId)));
+    return result.rowCount !== undefined && result.rowCount > 0;
   }
 }
 
