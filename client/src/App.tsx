@@ -195,6 +195,23 @@ function TimerComponent() {
     <div>
       <h3>Focus Timer</h3>
       
+      {/* Workflow Method Selector */}
+      <div style={{ marginBottom: "20px" }}>
+        <label style={{ marginRight: "10px" }}>Workflow Method:</label>
+        <select 
+          value={workflow} 
+          onChange={(e) => setWorkflow(e.target.value)}
+          disabled={isRunning}
+          style={{ padding: "5px", backgroundColor: "#333", color: "#fff", border: "1px solid #555", marginRight: "10px" }}
+        >
+          <option value="standard">Standard</option>
+          <option value="pomodoro">Pomodoro</option>
+          <option value="ultradian">Ultradian Rhythms</option>
+          <option value="flowtime">Flowtime</option>
+        </select>
+        <small style={{ color: "#888" }}>{getWorkflowDescription()}</small>
+      </div>
+
       {/* Session Type Selector */}
       <div style={{ marginBottom: "20px" }}>
         <label style={{ marginRight: "10px" }}>Session Type:</label>
@@ -215,7 +232,7 @@ function TimerComponent() {
       {/* Duration Presets */}
       <div style={{ marginBottom: "20px" }}>
         <label style={{ marginRight: "10px" }}>Duration:</label>
-        {[25, 45, 90].map(minutes => (
+        {getWorkflowDurations().map(minutes => (
           <button
             key={minutes}
             onClick={() => handleDurationChange(minutes)}
@@ -332,7 +349,123 @@ function TimerComponent() {
         </div>
       )}
 
-      {/* Instructions */}
+      {/* Session Completion Form */}
+      {showCompletionForm && (
+        <div style={{ 
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          backgroundColor: "#222",
+          border: "2px solid #444",
+          borderRadius: "10px",
+          padding: "30px",
+          width: "400px",
+          zIndex: 1000
+        }}>
+          <h4 style={{ marginBottom: "20px" }}>Session Complete! 🎉</h4>
+          
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>How did you feel?</label>
+            <select 
+              value={mood} 
+              onChange={(e) => setMood(e.target.value)}
+              style={{ width: "100%", padding: "8px", backgroundColor: "#333", color: "#fff", border: "1px solid #555" }}
+            >
+              <option value="">Select mood...</option>
+              <option value="energized">Energized</option>
+              <option value="focused">Focused</option>
+              <option value="calm">Calm</option>
+              <option value="tired">Tired</option>
+              <option value="distracted">Distracted</option>
+              <option value="stressed">Stressed</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>Productivity (1-10)</label>
+            <input 
+              type="range" 
+              min="1" 
+              max="10" 
+              value={productivity}
+              onChange={(e) => setProductivity(parseInt(e.target.value))}
+              style={{ width: "100%" }}
+            />
+            <div style={{ textAlign: "center", color: "#888" }}>{productivity}/10</div>
+          </div>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>Any setbacks or interruptions?</label>
+            <textarea 
+              value={setbacks}
+              onChange={(e) => setSetbacks(e.target.value)}
+              placeholder="Phone notifications, noise, etc..."
+              style={{ 
+                width: "100%", 
+                height: "60px", 
+                padding: "8px", 
+                backgroundColor: "#333", 
+                color: "#fff", 
+                border: "1px solid #555",
+                borderRadius: "3px"
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "5px" }}>Session notes</label>
+            <textarea 
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="What did you work on? How did it go?"
+              style={{ 
+                width: "100%", 
+                height: "60px", 
+                padding: "8px", 
+                backgroundColor: "#333", 
+                color: "#fff", 
+                border: "1px solid #555",
+                borderRadius: "3px"
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              onClick={handleCompleteSession}
+              disabled={updateSessionMutation.isPending}
+              style={{
+                flex: 1,
+                padding: "12px",
+                backgroundColor: "#4CAF50",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer"
+              }}
+            >
+              {updateSessionMutation.isPending ? "Saving..." : "Save Session"}
+            </button>
+            <button
+              onClick={() => setShowCompletionForm(false)}
+              style={{
+                flex: 1,
+                padding: "12px",
+                backgroundColor: "#666",
+                color: "#fff",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer"
+              }}
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Session History */}
       <div style={{ 
         marginTop: "30px", 
         padding: "15px", 
@@ -340,13 +473,55 @@ function TimerComponent() {
         border: "1px solid #333",
         borderRadius: "5px"
       }}>
-        <h4>How to use:</h4>
-        <ul style={{ paddingLeft: "20px" }}>
-          <li>Choose your session type and duration</li>
-          <li>Click Start to begin your focus session</li>
-          <li>Stay focused until the timer completes</li>
-          <li>You'll get a notification when time is up</li>
-          <li>Sessions are automatically saved to your history</li>
+        <h4>Recent Sessions</h4>
+        {sessionHistory.length === 0 ? (
+          <p style={{ color: "#888" }}>No sessions yet. Start your first focus session!</p>
+        ) : (
+          <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+            {sessionHistory.slice(0, 5).map((session: any) => (
+              <div key={session.id} style={{ 
+                padding: "10px", 
+                marginBottom: "10px", 
+                backgroundColor: "#2a2a2a", 
+                border: "1px solid #444",
+                borderRadius: "5px"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>{session.type} - {session.workflow}</span>
+                  <span style={{ color: "#888" }}>
+                    {session.actualDuration || session.plannedDuration}min
+                  </span>
+                </div>
+                {session.mood && (
+                  <div style={{ fontSize: "12px", color: "#aaa" }}>
+                    Mood: {session.mood} | Productivity: {session.productivity}/10
+                  </div>
+                )}
+                {session.setbacks && (
+                  <div style={{ fontSize: "12px", color: "#f44336" }}>
+                    Setbacks: {session.setbacks}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Instructions */}
+      <div style={{ 
+        marginTop: "20px", 
+        padding: "15px", 
+        backgroundColor: "#1a1a1a", 
+        border: "1px solid #333",
+        borderRadius: "5px"
+      }}>
+        <h4>Workflow Methods:</h4>
+        <ul style={{ paddingLeft: "20px", color: "#ccc" }}>
+          <li><strong>Pomodoro:</strong> 25min work + 5min break cycles</li>
+          <li><strong>Ultradian:</strong> 90min work + 20min break (natural rhythms)</li>
+          <li><strong>Flowtime:</strong> Work until you naturally need a break</li>
+          <li><strong>Standard:</strong> Traditional fixed-duration sessions</li>
         </ul>
       </div>
     </div>
