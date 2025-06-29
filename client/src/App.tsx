@@ -61,36 +61,69 @@ function TimerComponent() {
     }
   }, []);
 
+  // Session History Query
+  const { data: sessionHistory = [] } = useQuery({
+    queryKey: ["/api/sessions"],
+  });
+
   // API calls
   const startSessionMutation = useMutation({
     mutationFn: async () => {
+      const plannedMinutes = Math.floor(timeLeft / 60);
       const response = await apiRequest("POST", "/api/sessions", {
         startTime: new Date().toISOString(),
-        duration: 90,
+        plannedDuration: plannedMinutes,
         type: sessionType,
+        workflow: workflow,
         completed: false,
       });
       return response.json();
     },
     onSuccess: (session) => {
       setCurrentSessionId(session.id);
+      setSessionStartTime(new Date());
       setIsRunning(true);
     },
   });
 
   const updateSessionMutation = useMutation({
-    mutationFn: async (sessionId: number) => {
-      const response = await apiRequest("PATCH", `/api/sessions/${sessionId}`, {
+    mutationFn: async (data: {
+      sessionId: number;
+      actualDuration?: number;
+      mood?: string;
+      setbacks?: string;
+      notes?: string;
+      productivity?: number;
+    }) => {
+      const response = await apiRequest("PATCH", `/api/sessions/${data.sessionId}`, {
         endTime: new Date().toISOString(),
         completed: true,
+        actualDuration: data.actualDuration,
+        mood: data.mood,
+        setbacks: data.setbacks,
+        notes: data.notes,
+        productivity: data.productivity,
       });
       return response.json();
+    },
+    onSuccess: () => {
+      // Reset form
+      setMood("");
+      setSetbacks("");
+      setNotes("");
+      setProductivity(5);
+      setShowCompletionForm(false);
+      setCurrentSessionId(null);
+      // Refetch session history
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
     },
   });
 
   const completeSession = (sessionId: number) => {
-    updateSessionMutation.mutate(sessionId);
-    setCurrentSessionId(null);
+    if (sessionStartTime) {
+      const actualMinutes = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000 / 60);
+      setShowCompletionForm(true);
+    }
   };
 
   const handleStart = () => {
@@ -115,6 +148,46 @@ function TimerComponent() {
   const handleDurationChange = (minutes: number) => {
     if (!isRunning) {
       setTimeLeft(minutes * 60);
+    }
+  };
+
+  const handleCompleteSession = () => {
+    if (currentSessionId && sessionStartTime) {
+      const actualMinutes = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000 / 60);
+      updateSessionMutation.mutate({
+        sessionId: currentSessionId,
+        actualDuration: actualMinutes,
+        mood,
+        setbacks: setbacks || undefined,
+        notes: notes || undefined,
+        productivity,
+      });
+    }
+  };
+
+  const getWorkflowDurations = () => {
+    switch (workflow) {
+      case "pomodoro":
+        return [25, 5]; // Work, break
+      case "ultradian":
+        return [90, 20]; // Work, break
+      case "flowtime":
+        return [90]; // Just work
+      default:
+        return [25, 45, 90]; // Standard options
+    }
+  };
+
+  const getWorkflowDescription = () => {
+    switch (workflow) {
+      case "pomodoro":
+        return "25 minutes of focused work followed by a 5-minute break";
+      case "ultradian":
+        return "90 minutes of deep work aligned with natural attention cycles";
+      case "flowtime":
+        return "Flexible duration based on your flow state";
+      default:
+        return "Choose your preferred work duration";
     }
   };
 

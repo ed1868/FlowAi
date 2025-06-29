@@ -159,9 +159,15 @@ export class MemStorage implements IStorage {
         userId,
         startTime: new Date(),
         endTime: new Date(Date.now() + 90 * 60 * 1000),
-        duration: 90,
+        plannedDuration: 90,
+        actualDuration: 90,
         type: "deep_work",
+        workflow: "standard",
         completed: true,
+        mood: "focused",
+        setbacks: null,
+        notes: null,
+        productivity: 8,
         createdAt: new Date(),
       });
 
@@ -170,9 +176,15 @@ export class MemStorage implements IStorage {
         userId,
         startTime: new Date(Date.now() - 2 * 60 * 60 * 1000),
         endTime: new Date(Date.now() - 30 * 60 * 1000),
-        duration: 90,
+        plannedDuration: 90,
+        actualDuration: 90,
         type: "deep_work",
+        workflow: "pomodoro",
         completed: true,
+        mood: "tired",
+        setbacks: "Phone notification",
+        notes: "Had some interruptions",
+        productivity: 6,
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
       });
 
@@ -539,8 +551,8 @@ export class MemStorage implements IStorage {
     const todayJournalEntries = journalEntries.filter(e => e.createdAt?.toISOString().split('T')[0] === today);
     
     const focusTime = todaySessions
-      .filter(s => s.completed && s.duration)
-      .reduce((total, s) => total + (s.duration || 0), 0);
+      .filter(s => s.completed && s.actualDuration)
+      .reduce((total, s) => total + (s.actualDuration || 0), 0);
     
     const focusTimeHours = Math.floor(focusTime / 60);
     const focusTimeMinutes = focusTime % 60;
