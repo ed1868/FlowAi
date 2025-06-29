@@ -585,23 +585,46 @@ function Dashboard() {
 
 function Landing() {
   return (
-    <div style={{ textAlign: "center", padding: "50px" }}>
-      <h1>Welcome to Flow</h1>
-      <p>Your comprehensive productivity station</p>
-      <a 
-        href="/api/login"
-        style={{
-          display: "inline-block",
-          padding: "15px 30px",
-          backgroundColor: "#4CAF50",
-          color: "#fff",
-          textDecoration: "none",
-          borderRadius: "5px",
-          fontSize: "18px"
-        }}
-      >
-        Login to Get Started
-      </a>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="text-center max-w-2xl mx-auto animate-fade-in">
+        <div className="mb-8">
+          <div className="w-20 h-20 bg-gradient-to-br from-apple-blue to-apple-indigo rounded-3xl flex items-center justify-center mx-auto mb-6 animate-float">
+            <span className="text-3xl">⚡</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold gradient-text mb-6">
+            Welcome to Flow
+          </h1>
+          <p className="text-xl text-text-secondary mb-8 leading-relaxed">
+            Your comprehensive productivity station featuring focus timers, journaling, 
+            voice notes, and habit tracking - all designed with a beautiful Apple-inspired interface.
+          </p>
+        </div>
+        
+        <a 
+          href="/api/login"
+          className="inline-block px-8 py-4 text-lg font-semibold text-white bg-apple-blue rounded-2xl glass-button hover:scale-105 transition-all shadow-lg shadow-apple-blue/30"
+        >
+          🚀 Login to Get Started
+        </a>
+        
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="glass-card rounded-xl p-6 text-center">
+            <div className="text-3xl mb-3">⏱️</div>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Focus Timer</h3>
+            <p className="text-text-secondary text-sm">Pomodoro, Ultradian, and custom workflow methods</p>
+          </div>
+          <div className="glass-card rounded-xl p-6 text-center">
+            <div className="text-3xl mb-3">📝</div>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Smart Journaling</h3>
+            <p className="text-text-secondary text-sm">Capture thoughts with mood tracking and analytics</p>
+          </div>
+          <div className="glass-card rounded-xl p-6 text-center">
+            <div className="text-3xl mb-3">🎯</div>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Habit Tracking</h3>
+            <p className="text-text-secondary text-sm">Build lasting habits with streak counters</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
