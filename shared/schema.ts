@@ -73,7 +73,25 @@ export const voiceNotes = pgTable("voice_notes", {
   fileName: varchar("file_name").notNull(),
   duration: integer("duration"), // in seconds
   transcription: text("transcription"),
+  noteType: varchar("note_type").default("memo"), // 'memo', 'journal_draft', 'thought', 'future_advice'
+  mood: varchar("mood"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  isConverted: boolean("is_converted").default(false), // if converted to journal entry
+  journalEntryId: integer("journal_entry_id"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Voice clone management table
+export const userVoiceClones = pgTable("user_voice_clones", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  voiceId: varchar("voice_id").notNull(), // ElevenLabs voice ID
+  voiceName: varchar("voice_name").notNull(),
+  isActive: boolean("is_active").default(false),
+  sampleCount: integer("sample_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Habits table
@@ -187,6 +205,12 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).o
   updatedAt: true,
 });
 
+export const insertUserVoiceCloneSchema = createInsertSchema(userVoiceClones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -206,3 +230,5 @@ export type ResetCompletion = typeof resetCompletions.$inferSelect;
 export type InsertResetCompletion = z.infer<typeof insertResetCompletionSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type UserVoiceClone = typeof userVoiceClones.$inferSelect;
+export type InsertUserVoiceClone = z.infer<typeof insertUserVoiceCloneSchema>;
