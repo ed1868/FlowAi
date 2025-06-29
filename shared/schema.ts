@@ -146,6 +146,9 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const insertFocusSessionSchema = createInsertSchema(focusSessions).omit({
   id: true,
   createdAt: true,
+}).extend({
+  startTime: z.string().transform((str) => new Date(str)),
+  endTime: z.string().transform((str) => new Date(str)).optional(),
 });
 
 export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({

@@ -38,14 +38,15 @@ function TimerComponent() {
     } else if (timeLeft === 0) {
       // Timer finished
       setIsRunning(false);
-      if (currentSessionId) {
-        completeSession(currentSessionId);
-      }
       // Browser notification
       if (Notification.permission === "granted") {
         new Notification("Focus Session Complete!", {
-          body: "Great job! Your 90-minute focus session is done.",
+          body: "Great job! Your focus session is done.",
         });
+      }
+      // Show completion form
+      if (currentSessionId) {
+        setShowCompletionForm(true);
       }
     }
 
@@ -65,6 +66,8 @@ function TimerComponent() {
   const { data: sessionHistory = [] } = useQuery({
     queryKey: ["/api/sessions"],
   });
+
+  const sessions = Array.isArray(sessionHistory) ? sessionHistory : [];
 
   // API calls
   const startSessionMutation = useMutation({
@@ -120,10 +123,7 @@ function TimerComponent() {
   });
 
   const completeSession = (sessionId: number) => {
-    if (sessionStartTime) {
-      const actualMinutes = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000 / 60);
-      setShowCompletionForm(true);
-    }
+    setShowCompletionForm(true);
   };
 
   const handleStart = () => {
@@ -275,7 +275,7 @@ function TimerComponent() {
         overflow: "hidden"
       }}>
         <div style={{
-          width: `${100 - (timeLeft / (90 * 60)) * 100}%`,
+          width: sessionStartTime ? `${100 - (timeLeft / (90 * 60)) * 100}%` : "0%",
           height: "100%",
           backgroundColor: "#4CAF50",
           transition: "width 1s ease"
@@ -328,11 +328,29 @@ function TimerComponent() {
             color: "#fff",
             border: "none",
             borderRadius: "5px",
-            cursor: "pointer"
+            cursor: "pointer",
+            marginRight: "10px"
           }}
         >
           Reset
         </button>
+
+        {currentSessionId && (
+          <button
+            onClick={() => setShowCompletionForm(true)}
+            style={{
+              padding: "15px 30px",
+              fontSize: "18px",
+              backgroundColor: "#2196F3",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer"
+            }}
+          >
+            Complete Session
+          </button>
+        )}
       </div>
 
       {/* Session Status */}
@@ -474,11 +492,11 @@ function TimerComponent() {
         borderRadius: "5px"
       }}>
         <h4>Recent Sessions</h4>
-        {sessionHistory.length === 0 ? (
+        {sessions.length === 0 ? (
           <p style={{ color: "#888" }}>No sessions yet. Start your first focus session!</p>
         ) : (
           <div style={{ maxHeight: "200px", overflowY: "auto" }}>
-            {sessionHistory.slice(0, 5).map((session: any) => (
+            {sessions.slice(0, 5).map((session: any) => (
               <div key={session.id} style={{ 
                 padding: "10px", 
                 marginBottom: "10px", 
