@@ -135,7 +135,7 @@ function TimerComponent() {
       });
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setCurrentSessionId(data.id);
       setSessionStartTime(new Date());
       setIsRunning(true);
@@ -200,6 +200,18 @@ function TimerComponent() {
     }
   };
 
+  // Update timer when workflow changes
+  useEffect(() => {
+    if (workflow === "pomodoro" && !isRunning) {
+      setTimeLeft(25 * 60); // Always 25 minutes for Pomodoro
+      setPomodoroSession(1);
+      setIsOnBreak(false);
+      setCompletedCycles(0);
+    } else if (workflow !== "pomodoro" && !isRunning) {
+      setTimeLeft(90 * 60); // Default to 90 minutes for other workflows
+    }
+  }, [workflow, isRunning]);
+
   const handleCompleteSession = () => {
     if (currentSessionId && sessionStartTime) {
       const actualMinutes = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000 / 60);
@@ -240,6 +252,13 @@ function TimerComponent() {
     }
   };
 
+  const getInitialDuration = () => {
+    if (workflow === "pomodoro") {
+      return isOnBreak ? (pomodoroSession === 1 ? 30 * 60 : 5 * 60) : 25 * 60;
+    }
+    return Math.floor(timeLeft / 60) * 60 || 90 * 60;
+  };
+
   return (
     <div>
       <h3>Focus Timer</h3>
@@ -250,7 +269,14 @@ function TimerComponent() {
         <select 
           value={workflow} 
           onChange={(e) => setWorkflow(e.target.value)}
-          style={{ padding: "5px", marginRight: "20px" }}
+          style={{ 
+            padding: "5px", 
+            marginRight: "20px", 
+            backgroundColor: "#333", 
+            color: "#fff", 
+            border: "1px solid #555",
+            borderRadius: "3px"
+          }}
         >
           <option value="standard">Standard</option>
           <option value="pomodoro">Pomodoro</option>
@@ -262,7 +288,13 @@ function TimerComponent() {
         <select 
           value={sessionType} 
           onChange={(e) => setSessionType(e.target.value)}
-          style={{ padding: "5px" }}
+          style={{ 
+            padding: "5px", 
+            backgroundColor: "#333", 
+            color: "#fff", 
+            border: "1px solid #555",
+            borderRadius: "3px"
+          }}
         >
           <option value="deep_work">Deep Work</option>
           <option value="study">Study</option>
@@ -330,7 +362,7 @@ function TimerComponent() {
         overflow: "hidden"
       }}>
         <div style={{
-          width: sessionStartTime ? `${100 - (timeLeft / (90 * 60)) * 100}%` : "0%",
+          width: sessionStartTime ? `${100 - (timeLeft / (workflow === "pomodoro" ? 25 * 60 : 90 * 60)) * 100}%` : "0%",
           height: "100%",
           backgroundColor: "#4CAF50",
           transition: "width 1s ease"
@@ -507,8 +539,7 @@ function TimerComponent() {
         padding: "20px", 
         backgroundColor: "#2a2a2a", 
         borderRadius: "10px",
-        border: "1px solid #333",
-        borderRadius: "5px"
+        border: "1px solid #333"
       }}>
         <h4>Recent Sessions</h4>
         {sessions.length === 0 ? (
