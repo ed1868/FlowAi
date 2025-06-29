@@ -30,7 +30,7 @@ export default function JournalCalendar({ entries, selectedDate, onDateSelect, o
 
   const getEntriesForDate = (date: Date) => {
     return entries.filter(entry => 
-      isSameDay(new Date(entry.createdAt), date)
+      entry.createdAt && isSameDay(new Date(entry.createdAt), date)
     );
   };
 
@@ -103,7 +103,7 @@ export default function JournalCalendar({ entries, selectedDate, onDateSelect, o
                 {dayEntries.slice(0, 2).map(entry => (
                   <div key={entry.id} className="flex items-center gap-1">
                     <span className="text-xs">
-                      {moodEmojis[entry.mood] || "📝"}
+                      {entry.mood ? moodEmojis[entry.mood] || "📝" : "📝"}
                     </span>
                     <div className="w-2 h-2 bg-blue-400 rounded-full" />
                   </div>
@@ -163,7 +163,7 @@ export default function JournalCalendar({ entries, selectedDate, onDateSelect, o
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    {entry.tags.slice(0, 2).map(tag => (
+                    {(entry.tags || []).slice(0, 2).map(tag => (
                       <Badge key={tag} variant="secondary" className="text-xs">
                         {tag}
                       </Badge>

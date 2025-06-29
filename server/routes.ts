@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./memStorage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { analyzeJournalEntries, generateDailyReflection } from "./openai";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -175,6 +176,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting journal entry:", error);
       res.status(400).json({ message: "Failed to delete journal entry" });
+    }
+  });
+
+  // AI Analysis API
+  app.get('/api/ai/insights', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const entries = await storage.getUserJournalEntries(userId);
+      
+      if (entries.length < 3) {
+        return res.json([]);
+      }
+
+      const insights = await analyzeJournalEntries(entries);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+      res.status(500).json({ message: "Failed to generate insights" });
+    }
+  });
+
+  app.post('/api/ai/generate-insights', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const entries = await storage.getUserJournalEntries(userId);
+      
+      if (entries.length < 3) {
+        return res.status(400).json({ message: "Need at least 3 journal entries for analysis" });
+      }
+
+      const insights = await analyzeJournalEntries(entries);
+      res.json({ insights, generated: true });
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+      res.status(500).json({ message: "Failed to generate insights" });
+    }
+  });
+
+  app.get('/api/ai/reflection', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const entries = await storage.getUserJournalEntries(userId);
+      
+      const reflection = await generateDailyReflection(entries);
+      res.json({ reflection });
+    } catch (error) {
+      console.error("Error generating daily reflection:", error);
+      res.status(500).json({ message: "Failed to generate daily reflection" });
     }
   });
 
