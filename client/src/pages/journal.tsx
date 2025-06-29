@@ -58,6 +58,7 @@ export default function Journal() {
   const [sortBy, setSortBy] = useState<string>("newest");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState("entries");
+  const [entryDate, setEntryDate] = useState<Date | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -104,6 +105,7 @@ export default function Journal() {
     setMood("");
     setTags("");
     setIsPrivate(false);
+    setEntryDate(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -266,7 +268,14 @@ export default function Journal() {
                   </DialogTrigger>
                   <DialogContent className="glass-card border-glass-border max-w-2xl">
                     <DialogHeader>
-                      <DialogTitle className="gradient-text">Create New Journal Entry</DialogTitle>
+                      <DialogTitle className="gradient-text">
+                        Create New Journal Entry
+                        {entryDate && (
+                          <span className="block text-sm font-normal text-text-secondary mt-1">
+                            for {entryDate.toLocaleDateString()}
+                          </span>
+                        )}
+                      </DialogTitle>
                     </DialogHeader>
                     
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -464,6 +473,8 @@ export default function Journal() {
               onDateSelect={setSelectedDate}
               onCreateEntry={(date) => {
                 setSelectedDate(date);
+                setEntryDate(date);
+                setActiveTab("entries");
                 setIsCreateDialogOpen(true);
               }}
             />

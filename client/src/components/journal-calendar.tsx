@@ -143,8 +143,9 @@ export default function JournalCalendar({ entries, selectedDate, onDateSelect, o
             </h4>
             <Button
               size="sm"
-              onClick={() => onCreateEntry(selectedDate)}
-              className="glass-button border-glass-border text-white hover:bg-white/10"
+              onClick={() => selectedDate && onCreateEntry(selectedDate)}
+              disabled={!selectedDate}
+              className="glass-button border-glass-border text-white hover:bg-white/10 disabled:opacity-50"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Entry
