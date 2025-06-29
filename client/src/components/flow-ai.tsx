@@ -44,9 +44,7 @@ export default function FlowAI({ entries }: FlowAIProps) {
 
   // Generate new insights
   const generateInsightsMutation = useMutation({
-    mutationFn: () => apiRequest("/api/ai/generate-insights", {
-      method: "POST",
-    }),
+    mutationFn: () => apiRequest("/api/ai/generate-insights", "POST"),
     onSuccess: () => {
       setLastAnalysisCount(entries.length);
       refetch();
