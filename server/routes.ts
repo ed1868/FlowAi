@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupBasicAuth, isAuthenticated } from "./basicAuth";
 import { analyzeJournalEntries, generateDailyReflection, analyzeVoiceNotes, generateAdviceFromVoiceNotes } from "./openai";
 import { z } from "zod";
 import multer from "multer";
@@ -53,7 +53,7 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  await setupBasicAuth(app);
 
   // Test login route
   app.get('/api/test-login', async (req: any, res) => {

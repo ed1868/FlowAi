@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Menu, X } from "lucide-react";
 
 export default function Landing() {
   const [timerDisplay, setTimerDisplay] = useState("90:00");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   useEffect(() => {
     // Demo timer animation

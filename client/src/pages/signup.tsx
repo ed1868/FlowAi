@@ -4,13 +4,48 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SignUp() {
+  const [isLogin, setIsLogin] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    company: ''
+    username: '',
+    password: ''
+  });
+  const { toast } = useToast();
+
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { username: string; password: string }) => {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Invalid credentials");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Logged in successfully!",
+      });
+      window.location.href = "/";
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,8 +57,9 @@ export default function SignUp() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Redirect to actual signup flow
-    window.location.href = '/api/login';
+    if (formData.username && formData.password) {
+      loginMutation.mutate(formData);
+    }
   };
 
   return (
@@ -39,8 +75,12 @@ export default function SignUp() {
                 </div>
                 <span className="text-2xl font-semibold gradient-text">Flow</span>
               </div>
-              <h1 className="text-3xl font-bold mb-2">Create your account</h1>
-              <p className="text-text-secondary">Start your journey to peak productivity</p>
+              <h1 className="text-3xl font-bold mb-2">
+                {isLogin ? 'Welcome back' : 'Create your account'}
+              </h1>
+              <p className="text-text-secondary">
+                {isLogin ? 'Sign in to continue your productivity journey' : 'Start your journey to peak productivity'}
+              </p>
             </div>
 
             {/* Quick Demo Option */}
@@ -51,136 +91,93 @@ export default function SignUp() {
                 variant="outline"
               >
                 <i className="fas fa-user-check mr-2"></i>
-                Try Flow with Test User (No signup required)
+                Try as Test User (no signup required)
               </Button>
               
-              <div className="relative mb-6">
-                <Separator className="bg-glass-border" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-dark-1 px-4 text-text-tertiary text-sm">or create your account</span>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-dark-1 px-2 text-text-secondary">or</span>
                 </div>
               </div>
             </div>
 
-            {/* Sign Up Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName" className="text-text-primary">First Name</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    placeholder="John"
-                    className="glass-input border-glass-border mt-2"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName" className="text-text-primary">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    placeholder="Doe"
-                    className="glass-input border-glass-border mt-2"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="email" className="text-text-primary">Work Email</Label>
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Enter username"
+                  value={formData.username}
                   onChange={handleInputChange}
-                  placeholder="john@company.com"
-                  className="glass-input border-glass-border mt-2"
+                  className="glass-input rounded-xl"
                   required
                 />
               </div>
 
-              <div>
-                <Label htmlFor="company" className="text-text-primary">Company (Optional)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
                 <Input
-                  id="company"
-                  name="company"
-                  value={formData.company}
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={formData.password}
                   onChange={handleInputChange}
-                  placeholder="Acme Corp"
-                  className="glass-input border-glass-border mt-2"
+                  className="glass-input rounded-xl"
+                  required
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full glass-button px-6 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-apple-blue to-apple-indigo hover:shadow-lg"
+                className="w-full glass-button px-6 py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-apple-blue to-apple-indigo text-white hover:scale-105 transition-all"
+                disabled={loginMutation.isPending}
               >
-                <i className="fas fa-rocket mr-2"></i>
-                Create Account & Start Free Trial
+                {loginMutation.isPending ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-2"></i>
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-arrow-right mr-2"></i>
+                    Sign In
+                  </>
+                )}
               </Button>
             </form>
 
-            {/* OAuth Options */}
-            <div className="mt-6">
-              <div className="relative mb-6">
-                <Separator className="bg-glass-border" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-dark-1 px-4 text-text-tertiary text-sm">or continue with</span>
+            {/* Test Credentials Help */}
+            <div className="mt-6 p-4 bg-dark-2/50 rounded-xl border border-apple-blue/20">
+              <div className="text-sm text-text-secondary">
+                <div className="flex items-center mb-2">
+                  <i className="fas fa-info-circle text-apple-blue mr-2"></i>
+                  <span className="font-medium">Test Credentials</span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Button
-                  onClick={() => window.location.href = '/api/login'}
-                  variant="outline"
-                  className="glass-button px-4 py-3 rounded-xl text-sm font-medium border-glass-border"
-                >
-                  <i className="fab fa-google mr-2"></i>
-                  Google
-                </Button>
-                <Button
-                  onClick={() => window.location.href = '/api/login'}
-                  variant="outline"
-                  className="glass-button px-4 py-3 rounded-xl text-sm font-medium border-glass-border"
-                >
-                  <i className="fab fa-github mr-2"></i>
-                  GitHub
-                </Button>
+                <div className="space-y-1 text-xs">
+                  <div><strong>Username:</strong> test</div>
+                  <div><strong>Password:</strong> testing</div>
+                </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="text-center mt-8 space-y-4">
-              <p className="text-text-tertiary text-sm">
-                By creating an account, you agree to our{' '}
-                <a href="#" className="text-apple-blue hover:underline">Terms of Service</a>{' '}
-                and{' '}
-                <a href="#" className="text-apple-blue hover:underline">Privacy Policy</a>
-              </p>
-              
-              <p className="text-text-secondary">
-                Already have an account?{' '}
-                <a 
-                  href="/api/login" 
-                  className="text-apple-blue hover:underline font-medium"
+            <div className="text-center mt-6">
+              <p className="text-sm text-text-secondary">
+                New to Flow?{' '}
+                <button 
+                  onClick={() => window.location.href = '/api/login'}
+                  className="text-apple-blue hover:underline"
                 >
-                  Sign in
-                </a>
+                  Create account with Replit
+                </button>
               </p>
-              
-              <Button
-                onClick={() => window.location.href = '/'}
-                variant="ghost"
-                className="text-text-tertiary hover:text-text-secondary"
-              >
-                ← Back to home
-              </Button>
             </div>
           </CardContent>
         </Card>
