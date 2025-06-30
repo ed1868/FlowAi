@@ -48,16 +48,16 @@ export default function Landing() {
                 Features
               </button>
               <button 
-                onClick={() => scrollToSection('dashboard')}
-                className="text-text-secondary hover:text-text-primary transition-colors"
-              >
-                Dashboard
-              </button>
-              <button 
                 onClick={() => scrollToSection('pricing')}
                 className="text-text-secondary hover:text-text-primary transition-colors"
               >
                 Pricing
+              </button>
+              <button 
+                onClick={() => window.location.href = '/api/test-login'}
+                className="text-apple-green hover:text-apple-green/80 transition-colors"
+              >
+                Try Demo
               </button>
             </div>
             
@@ -176,6 +176,47 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Stats Section */}
+      <section className="py-16 px-6 bg-gradient-to-r from-apple-blue/10 to-apple-indigo/10">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: "2.3M+", label: "Active Users" },
+              { value: "45M+", label: "Focus Sessions" },
+              { value: "87%", label: "Productivity Increase" },
+              { value: "4.9/5", label: "User Rating" }
+            ].map((stat, index) => (
+              <div key={index} className="glass-card rounded-2xl p-6">
+                <div className="text-3xl md:text-4xl font-bold gradient-text mb-2">{stat.value}</div>
+                <div className="text-text-secondary text-sm md:text-base">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trusted By Section */}
+      <section className="py-16 px-6">
+        <div className="max-w-7xl mx-auto text-center">
+          <h3 className="text-xl text-text-secondary mb-12">Trusted by leading companies worldwide</h3>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-8 items-center opacity-60">
+            {[
+              { name: "Microsoft", logo: "🏢" },
+              { name: "Google", logo: "🔍" },
+              { name: "Spotify", logo: "🎵" },
+              { name: "Netflix", logo: "🎬" },
+              { name: "Airbnb", logo: "🏠" },
+              { name: "Uber", logo: "🚗" }
+            ].map((company, index) => (
+              <div key={index} className="flex flex-col items-center space-y-2">
+                <div className="text-2xl">{company.logo}</div>
+                <div className="text-sm text-text-tertiary">{company.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
@@ -237,6 +278,180 @@ export default function Landing() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 px-6 bg-gradient-to-r from-dark-2 to-dark-3">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">What Our Users Say</h2>
+            <p className="text-xl text-text-secondary max-w-3xl mx-auto">
+              Join thousands of professionals who've transformed their productivity with Flow
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "Flow transformed my productivity. The 90-minute sessions helped me achieve deep focus like never before. My output increased by 300% in just 6 weeks.",
+                author: "Sarah Chen",
+                role: "Senior Product Manager",
+                company: "Microsoft",
+                avatar: "👩‍💼"
+              },
+              {
+                quote: "The voice notes feature is incredible. I can capture ideas instantly while walking or driving. The AI transcription is spot-on and saves me hours.",
+                author: "Marcus Johnson",
+                role: "Creative Director",
+                company: "Netflix",
+                avatar: "👨‍🎨"
+              },
+              {
+                quote: "Our entire team adopted Flow. The habit tracking and analytics gave us insights into our productivity patterns. Team efficiency improved by 40%.",
+                author: "Elena Rodriguez",
+                role: "Engineering Lead",
+                company: "Spotify",
+                avatar: "👩‍💻"
+              }
+            ].map((testimonial, index) => (
+              <Card key={index} className="glass-card rounded-3xl p-8">
+                <CardContent className="p-0">
+                  <div className="flex items-center mb-6">
+                    <div className="text-4xl mr-4">{testimonial.avatar}</div>
+                    <div>
+                      <h4 className="font-semibold text-text-primary">{testimonial.author}</h4>
+                      <p className="text-text-secondary text-sm">{testimonial.role} at {testimonial.company}</p>
+                    </div>
+                  </div>
+                  <p className="text-text-secondary leading-relaxed italic">"{testimonial.quote}"</p>
+                  <div className="flex text-apple-orange text-sm mt-4">
+                    {"★".repeat(5)}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">Simple, Transparent Pricing</h2>
+            <p className="text-xl text-text-secondary max-w-3xl mx-auto">
+              Choose the plan that fits your productivity journey. No hidden fees, cancel anytime.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: "Starter",
+                price: "Free",
+                period: "forever",
+                description: "Perfect for getting started with focused work",
+                features: [
+                  "3 focus sessions per day",
+                  "Basic journaling",
+                  "Simple habit tracking",
+                  "Community support",
+                  "Mobile app access"
+                ],
+                cta: "Get Started",
+                popular: false,
+                gradient: "from-apple-green to-apple-blue"
+              },
+              {
+                name: "Pro",
+                price: "$12",
+                period: "per month",
+                description: "For professionals serious about productivity",
+                features: [
+                  "Unlimited focus sessions",
+                  "Voice notes & AI transcription",
+                  "Advanced analytics",
+                  "Custom reset rituals",
+                  "Priority support",
+                  "Calendar integration",
+                  "Team collaboration"
+                ],
+                cta: "Start Free Trial",
+                popular: true,
+                gradient: "from-apple-orange to-apple-red"
+              },
+              {
+                name: "Teams",
+                price: "$8",
+                period: "per user/month",
+                description: "Scale productivity across your entire team",
+                features: [
+                  "Everything in Pro",
+                  "Team dashboard",
+                  "Performance insights",
+                  "Admin controls",
+                  "SSO integration",
+                  "Custom branding",
+                  "Dedicated support"
+                ],
+                cta: "Contact Sales",
+                popular: false,
+                gradient: "from-purple-500 to-apple-indigo"
+              }
+            ].map((plan, index) => (
+              <Card key={index} className={`glass-card rounded-3xl p-8 relative ${plan.popular ? 'ring-2 ring-apple-orange scale-105' : ''}`}>
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-apple-orange to-apple-red text-white px-4 py-2 rounded-full text-sm font-medium">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+                <CardContent className="p-0">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${plan.gradient} rounded-2xl flex items-center justify-center mb-6 mx-auto`}>
+                    <i className="fas fa-bolt text-white text-2xl"></i>
+                  </div>
+                  <h3 className="text-2xl font-bold text-center mb-2">{plan.name}</h3>
+                  <div className="text-center mb-4">
+                    <span className="text-4xl font-bold gradient-text">{plan.price}</span>
+                    {plan.price !== "Free" && <span className="text-text-secondary">/{plan.period}</span>}
+                  </div>
+                  <p className="text-text-secondary text-center mb-8">{plan.description}</p>
+                  
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-center">
+                        <i className="fas fa-check text-apple-green mr-3"></i>
+                        <span className="text-text-secondary">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <Button
+                    onClick={() => window.location.href = plan.name === 'Teams' ? '/contact' : '/api/login'}
+                    className={`w-full glass-button px-6 py-3 rounded-xl text-sm font-medium ${
+                      plan.popular ? 'bg-gradient-to-r from-apple-orange to-apple-red hover:shadow-lg' : 'hover:bg-white/20'
+                    }`}
+                  >
+                    {plan.cta}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          <div className="text-center mt-12">
+            <p className="text-text-secondary mb-4">All plans include 14-day free trial • No credit card required • Cancel anytime</p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/api/test-login'}
+              className="glass-button px-6 py-3 rounded-xl text-sm font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
+            >
+              <i className="fas fa-user-check mr-2"></i>
+              Try Flow with Test User
+            </Button>
           </div>
         </div>
       </section>
