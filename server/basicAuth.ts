@@ -78,7 +78,19 @@ export async function setupBasicAuth(app: Express) {
   // Quick test login endpoint (for backward compatibility)
   app.get("/api/test-login", async (req, res) => {
     (req.session as any).user = TEST_USER.user;
-    res.redirect("/");
+    
+    // Check if request is from mobile or expects JSON
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    const acceptsJSON = req.headers.accept?.includes('application/json');
+    
+    if (isMobile || acceptsJSON) {
+      // For mobile or AJAX requests, return JSON
+      res.json({ success: true, redirect: '/', user: TEST_USER.user });
+    } else {
+      // For desktop browser direct navigation, use redirect
+      res.redirect("/");
+    }
   });
 }
 

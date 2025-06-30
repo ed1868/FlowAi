@@ -75,7 +75,27 @@ export default function Landing() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => window.location.href = '/api/test-login'}
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/test-login', {
+                      method: 'GET',
+                      headers: {
+                        'Accept': 'application/json',
+                      },
+                    });
+                    
+                    if (response.ok) {
+                      const data = await response.json();
+                      if (data.success) {
+                        window.location.href = data.redirect || '/';
+                      }
+                    } else {
+                      window.location.href = '/api/test-login';
+                    }
+                  } catch (error) {
+                    window.location.href = '/api/test-login';
+                  }
+                }}
                 className="glass-button px-4 py-2 rounded-xl text-sm font-medium border-apple-blue/30 text-apple-blue hover:bg-apple-blue/10"
               >
                 Test User
@@ -125,9 +145,27 @@ export default function Landing() {
                 Pricing
               </button>
               <button 
-                onClick={() => {
-                  window.location.href = '/api/test-login';
+                onClick={async () => {
                   setMobileMenuOpen(false);
+                  try {
+                    const response = await fetch('/api/test-login', {
+                      method: 'GET',
+                      headers: {
+                        'Accept': 'application/json',
+                      },
+                    });
+                    
+                    if (response.ok) {
+                      const data = await response.json();
+                      if (data.success) {
+                        window.location.href = data.redirect || '/';
+                      }
+                    } else {
+                      window.location.href = '/api/test-login';
+                    }
+                  } catch (error) {
+                    window.location.href = '/api/test-login';
+                  }
                 }}
                 className="block w-full text-left text-apple-green hover:text-apple-green/80 transition-colors py-2"
               >
@@ -146,9 +184,27 @@ export default function Landing() {
                   Sign In
                 </Button>
                 <Button
-                  onClick={() => {
-                    window.location.href = '/api/test-login';
+                  onClick={async () => {
                     setMobileMenuOpen(false);
+                    try {
+                      const response = await fetch('/api/test-login', {
+                        method: 'GET',
+                        headers: {
+                          'Accept': 'application/json',
+                        },
+                      });
+                      
+                      if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                          window.location.href = data.redirect || '/';
+                        }
+                      } else {
+                        window.location.href = '/api/test-login';
+                      }
+                    } catch (error) {
+                      window.location.href = '/api/test-login';
+                    }
                   }}
                   className="w-full glass-button rounded-xl text-sm font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
                   variant="outline"

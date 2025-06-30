@@ -86,7 +86,29 @@ export default function SignUp() {
             {/* Quick Demo Option */}
             <div className="mb-6">
               <Button
-                onClick={() => window.location.href = '/api/test-login'}
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/test-login', {
+                      method: 'GET',
+                      headers: {
+                        'Accept': 'application/json',
+                      },
+                    });
+                    
+                    if (response.ok) {
+                      const data = await response.json();
+                      if (data.success) {
+                        window.location.href = data.redirect || '/';
+                      }
+                    } else {
+                      // Fallback to direct navigation
+                      window.location.href = '/api/test-login';
+                    }
+                  } catch (error) {
+                    // Fallback to direct navigation
+                    window.location.href = '/api/test-login';
+                  }
+                }}
                 className="w-full glass-button px-6 py-3 rounded-xl text-sm font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10 mb-4"
                 variant="outline"
               >
