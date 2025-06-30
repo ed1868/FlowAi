@@ -111,7 +111,15 @@ export default function Navigation() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => window.location.href = '/api/logout'}
+              onClick={async () => {
+                try {
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  window.location.href = '/';
+                } catch (error) {
+                  console.error('Logout failed:', error);
+                  window.location.href = '/';
+                }
+              }}
               className="text-text-secondary hover:text-apple-red"
             >
               <LogOut size={16} />
