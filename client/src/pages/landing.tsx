@@ -471,7 +471,7 @@ export default function Landing() {
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                 <Button
-                  onClick={() => window.location.href = '/api/login'}
+                  onClick={() => window.location.href = '/signup'}
                   className="glass-button px-8 py-4 rounded-2xl text-lg font-medium hover:animate-glow"
                 >
                   <i className="fas fa-rocket mr-2"></i>
