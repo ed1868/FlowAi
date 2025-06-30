@@ -42,6 +42,7 @@ export default function Landing() {
               <span className="text-xl font-semibold gradient-text">Flow</span>
             </div>
             
+            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <button 
                 onClick={() => scrollToSection('features')}
@@ -63,10 +64,11 @@ export default function Landing() {
               </button>
             </div>
             
-            <div className="flex items-center space-x-4">
+            {/* Desktop Action Buttons */}
+            <div className="hidden md:flex items-center space-x-4">
               <Button
                 variant="ghost"
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/signup'}
                 className="text-text-secondary hover:text-text-primary"
               >
                 Sign In
@@ -79,14 +81,93 @@ export default function Landing() {
                 Test User
               </Button>
               <Button
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => window.location.href = '/signup'}
                 className="glass-button px-6 py-2 rounded-xl text-sm font-medium hover:bg-white/20"
               >
                 Get Started
               </Button>
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-text-secondary hover:text-text-primary"
+              >
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-dark-1/95 backdrop-blur-md border-t border-white/10 z-50">
+            <div className="px-6 py-4 space-y-4">
+              <button 
+                onClick={() => {
+                  scrollToSection('features');
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left text-text-secondary hover:text-text-primary transition-colors py-2"
+              >
+                Features
+              </button>
+              <button 
+                onClick={() => {
+                  scrollToSection('pricing');
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left text-text-secondary hover:text-text-primary transition-colors py-2"
+              >
+                Pricing
+              </button>
+              <button 
+                onClick={() => {
+                  window.location.href = '/api/test-login';
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left text-apple-green hover:text-apple-green/80 transition-colors py-2"
+              >
+                Try Demo
+              </button>
+              
+              <div className="border-t border-white/10 pt-4 space-y-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    window.location.href = '/signup';
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full glass-button rounded-xl text-sm font-medium border-apple-blue/30 text-apple-blue hover:bg-apple-blue/10"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  onClick={() => {
+                    window.location.href = '/api/test-login';
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full glass-button rounded-xl text-sm font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
+                  variant="outline"
+                >
+                  Test User
+                </Button>
+                <Button
+                  onClick={() => {
+                    window.location.href = '/signup';
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full glass-button rounded-xl text-sm font-medium bg-gradient-to-r from-apple-blue to-apple-indigo text-white hover:scale-105 transition-all"
+                >
+                  Get Started
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
