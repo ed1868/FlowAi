@@ -70,6 +70,13 @@ export default function Landing() {
                 Sign In
               </Button>
               <Button
+                variant="outline"
+                onClick={() => window.location.href = '/api/test-login'}
+                className="glass-button px-4 py-2 rounded-xl text-sm font-medium border-apple-blue/30 text-apple-blue hover:bg-apple-blue/10"
+              >
+                Test User
+              </Button>
+              <Button
                 onClick={() => window.location.href = '/api/login'}
                 className="glass-button px-6 py-2 rounded-xl text-sm font-medium hover:bg-white/20"
               >
@@ -102,6 +109,14 @@ export default function Landing() {
               >
                 <i className="fas fa-play mr-2"></i>
                 Start Your First Session
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = '/api/test-login'}
+                className="glass-button px-8 py-4 rounded-2xl text-lg font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
+              >
+                <i className="fas fa-user-check mr-2"></i>
+                Try as Test User
               </Button>
               <Button
                 variant="outline"
@@ -246,6 +261,14 @@ export default function Landing() {
                 >
                   <i className="fas fa-rocket mr-2"></i>
                   Start Free Trial
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = '/api/test-login'}
+                  className="glass-button px-8 py-4 rounded-2xl text-lg font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
+                >
+                  <i className="fas fa-user-check mr-2"></i>
+                  Try as Test User
                 </Button>
                 <Button
                   variant="outline"

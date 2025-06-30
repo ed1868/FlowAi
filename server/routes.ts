@@ -55,6 +55,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // Test login route
+  app.get('/api/test-login', async (req: any, res) => {
+    try {
+      // Create a mock test user session
+      const testUser = {
+        claims: {
+          sub: "test-user-123",
+          email: "test@flow.app",
+          first_name: "Test",
+          last_name: "User",
+          profile_image_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 1 week from now
+        },
+        access_token: "test-access-token",
+        refresh_token: "test-refresh-token",
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60),
+      };
+
+      // Ensure test user exists in storage
+      await storage.upsertUser({
+        id: testUser.claims.sub,
+        email: testUser.claims.email,
+        firstName: testUser.claims.first_name,
+        lastName: testUser.claims.last_name,
+        profileImageUrl: testUser.claims.profile_image_url,
+      });
+
+      // Add sample data for test user
+      try {
+        // Add a sample journal entry
+        await storage.createJournalEntry({
+          userId: testUser.claims.sub,
+          title: "Welcome to Flow!",
+          content: "This is a sample journal entry to show how journaling works in Flow. You can write about your thoughts, track your mood, and use tags to organize your entries. Try creating your own entry!",
+          mood: "optimistic",
+          tags: ["welcome", "demo", "productivity"]
+        });
+
+        // Add a sample habit
+        await storage.createHabit({
+          userId: testUser.claims.sub,
+          name: "Morning Meditation",
+          description: "10 minutes of mindfulness to start the day",
+          frequency: "daily",
+          targetValue: 1,
+          unit: "session"
+        });
+
+        // Add sample user preferences
+        await storage.updateUserPreferences(testUser.claims.sub, {
+          theme: "dark",
+          defaultSessionDuration: 90,
+          breakDuration: 15,
+          notificationsEnabled: true,
+          soundEnabled: true
+        });
+      } catch (error) {
+        // Don't fail the login if sample data creation fails
+        console.log("Note: Sample data creation failed, but test user login continues");
+      }
+
+      // Simulate login by setting session
+      req.login(testUser, (err: any) => {
+        if (err) {
+          console.error("Error during test login:", err);
+          return res.status(500).json({ message: "Failed to create test session" });
+        }
+        res.redirect('/');
+      });
+    } catch (error) {
+      console.error("Error in test login:", error);
+      res.status(500).json({ message: "Failed to create test user" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
