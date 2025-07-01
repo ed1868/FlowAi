@@ -876,6 +876,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment Methods API
+  app.get('/api/payment-methods', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // For demo purposes, return mock payment methods with test card
+      const mockPaymentMethods = [
+        {
+          id: 'pm_test_card',
+          type: 'card',
+          card: {
+            brand: 'visa',
+            last4: '4242',
+            exp_month: 12,
+            exp_year: 2030,
+          },
+          isDefault: true,
+        }
+      ];
+
+      res.json(mockPaymentMethods);
+    } catch (error: any) {
+      console.error("Error fetching payment methods:", error);
+      res.status(500).json({ message: "Failed to fetch payment methods" });
+    }
+  });
+
+  app.post('/api/payment-methods', isAuthenticated, async (req: any, res) => {
+    try {
+      const { paymentMethodId } = req.body;
+      const userId = req.user.claims.sub;
+
+      // For demo purposes, simulate adding a payment method
+      const newPaymentMethod = {
+        id: paymentMethodId || `pm_${Date.now()}`,
+        type: 'card',
+        card: {
+          brand: 'visa',
+          last4: '4242',
+          exp_month: 12,
+          exp_year: 2030,
+        },
+        isDefault: false,
+      };
+
+      res.json(newPaymentMethod);
+    } catch (error: any) {
+      console.error("Error adding payment method:", error);
+      res.status(500).json({ message: "Failed to add payment method" });
+    }
+  });
+
+  app.delete('/api/payment-methods/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+
+      // For demo purposes, simulate deletion
+      res.json({ success: true, message: "Payment method removed" });
+    } catch (error: any) {
+      console.error("Error removing payment method:", error);
+      res.status(500).json({ message: "Failed to remove payment method" });
+    }
+  });
+
+  app.patch('/api/payment-methods/:id/default', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.claims.sub;
+
+      // For demo purposes, simulate setting default
+      res.json({ success: true, message: "Default payment method updated" });
+    } catch (error: any) {
+      console.error("Error updating default payment method:", error);
+      res.status(500).json({ message: "Failed to update default payment method" });
+    }
+  });
+
   // Stripe Payment Routes
   
   // Create subscription with payment intent
