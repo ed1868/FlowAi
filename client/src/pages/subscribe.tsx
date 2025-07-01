@@ -484,55 +484,90 @@ function SignupPage() {
       case 'payment':
         if (!selectedPlan || !userInfo) return null;
 
-        const paymentContent = (
-          <div className="max-w-md mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold gradient-text mb-2">
-                {selectedPlan.price === 0 ? 'Complete Signup' : 'Complete Payment'}
-              </h1>
-              <div className="glass-card rounded-xl p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{selectedPlan.name}</span>
-                  <span className="text-lg font-bold">
-                    {selectedPlan.price === 0 ? 'Free' : `$${selectedPlan.price}/${selectedPlan.period}`}
-                  </span>
+        // Handle free plan separately (no Stripe components)
+        if (selectedPlan.price === 0) {
+          return (
+            <div className="max-w-md mx-auto">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold gradient-text mb-2">Complete Signup</h1>
+                <div className="glass-card rounded-xl p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{selectedPlan.name}</span>
+                    <span className="text-lg font-bold">Free</span>
+                  </div>
+                  <p className="text-sm text-text-secondary mt-1">
+                    For {userInfo.firstName} {userInfo.lastName} ({userInfo.email})
+                  </p>
                 </div>
-                <p className="text-sm text-text-secondary mt-1">
-                  For {userInfo.firstName} {userInfo.lastName} ({userInfo.email})
+              </div>
+
+              <Card>
+                <CardContent className="p-6">
+                  <FreeSignupForm selectedPlan={selectedPlan} userInfo={userInfo} />
+                  
+                  <div className="text-center mt-6">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setStep('info')}
+                      className="text-text-secondary"
+                    >
+                      ← Back to account info
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        }
+
+        // Handle paid plans with Stripe Elements
+        if (!stripePromise || !clientSecret) {
+          return (
+            <div className="max-w-md mx-auto">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold gradient-text mb-2">Payment Setup Required</h1>
+                <p className="text-text-secondary">
+                  Payment processing is not configured. Please contact support.
                 </p>
               </div>
             </div>
-
-            <Card>
-              <CardContent className="p-6">
-                {selectedPlan.price === 0 ? (
-                  <FreeSignupForm selectedPlan={selectedPlan} userInfo={userInfo} />
-                ) : (
-                  <PaymentForm selectedPlan={selectedPlan} userInfo={userInfo} />
-                )}
-                
-                <div className="text-center mt-6">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setStep('info')}
-                    className="text-text-secondary"
-                  >
-                    ← Back to account info
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-        // Only wrap with Stripe Elements if it's a paid plan
-        if (selectedPlan.price === 0 || !clientSecret) {
-          return paymentContent;
+          );
         }
 
         return (
           <Elements stripe={stripePromise} options={{ clientSecret }}>
-            {paymentContent}
+            <div className="max-w-md mx-auto">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold gradient-text mb-2">Complete Payment</h1>
+                <div className="glass-card rounded-xl p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{selectedPlan.name}</span>
+                    <span className="text-lg font-bold">
+                      ${selectedPlan.price}/{selectedPlan.period}
+                    </span>
+                  </div>
+                  <p className="text-sm text-text-secondary mt-1">
+                    For {userInfo.firstName} {userInfo.lastName} ({userInfo.email})
+                  </p>
+                </div>
+              </div>
+
+              <Card>
+                <CardContent className="p-6">
+                  <PaymentForm selectedPlan={selectedPlan} userInfo={userInfo} />
+                  
+                  <div className="text-center mt-6">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setStep('info')}
+                      className="text-text-secondary"
+                    >
+                      ← Back to account info
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </Elements>
         );
 
