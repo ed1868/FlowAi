@@ -23,6 +23,19 @@ import {
   insertUserPreferencesSchema,
 } from "@shared/schema";
 
+// Stripe configuration with placeholder
+let stripe: any = null;
+try {
+  const Stripe = require('stripe');
+  // Use placeholder key for now - will be replaced with real key
+  const stripeKey = process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key';
+  stripe = new Stripe(stripeKey, {
+    apiVersion: '2023-10-16',
+  });
+} catch (error) {
+  console.log('Stripe not configured - payment features disabled');
+}
+
 // Set up multer for file uploads
 const upload = multer({
   storage: multer.diskStorage({
@@ -808,6 +821,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error serving advice audio:", error);
       res.status(500).json({ message: "Failed to serve audio" });
+    }
+  });
+
+  // Stripe Payment Routes
+  
+  // Create subscription with payment intent
+  app.post('/api/create-subscription', async (req: any, res) => {
+    if (!stripe) {
+      return res.status(503).json({ 
+        message: "Payment processing is not configured. Please contact support." 
+      });
+    }
+
+    try {
+      const { planId, userInfo } = req.body;
+      
+      // Define subscription plans
+      const plans = {
+        free: { price: 0, name: "Free Plan" },
+        pro: { price: 1200, name: "Flow Pro" }, // $12.00 in cents
+        team: { price: 2500, name: "Flow Team" } // $25.00 in cents
+      };
+
+      const selectedPlan = plans[planId as keyof typeof plans];
+      if (!selectedPlan) {
+        return res.status(400).json({ message: "Invalid plan selected" });
+      }
+
+      if (selectedPlan.price === 0) {
+        // Free plan - no payment required
+        return res.json({ success: true, planId: "free" });
+      }
+
+      // Create customer
+      const customer = await stripe.customers.create({
+        email: userInfo.email,
+        name: `${userInfo.firstName} ${userInfo.lastName}`,
+        metadata: {
+          planId: planId,
+        },
+      });
+
+      // Create payment intent for subscription
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: selectedPlan.price,
+        currency: 'usd',
+        customer: customer.id,
+        metadata: {
+          planId: planId,
+          customerEmail: userInfo.email,
+        },
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        customerId: customer.id,
+      });
+
+    } catch (error: any) {
+      console.error('Stripe subscription error:', error);
+      res.status(500).json({ 
+        message: "Failed to create subscription", 
+        error: error.message 
+      });
+    }
+  });
+
+  // Handle successful payments webhook
+  app.post('/api/stripe-webhook', async (req: any, res) => {
+    if (!stripe) {
+      return res.status(503).json({ message: "Stripe not configured" });
+    }
+
+    try {
+      const sig = req.headers['stripe-signature'];
+      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+      let event;
+      if (endpointSecret) {
+        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+      } else {
+        event = req.body;
+      }
+
+      // Handle the event
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object;
+          console.log('Payment succeeded:', paymentIntent.id);
+          
+          // Here you would typically:
+          // 1. Create user account in your database
+          // 2. Activate their subscription
+          // 3. Send welcome email
+          
+          break;
+        case 'customer.subscription.deleted':
+          // Handle subscription cancellation
+          break;
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Webhook error:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Create payment intent for one-time payments
+  app.post('/api/create-payment-intent', async (req: any, res) => {
+    if (!stripe) {
+      return res.status(503).json({ 
+        message: "Payment processing is not configured" 
+      });
+    }
+
+    try {
+      const { amount, currency = 'usd' } = req.body;
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency,
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error: any) {
+      console.error('Payment intent error:', error);
+      res.status(500).json({ 
+        message: "Failed to create payment intent", 
+        error: error.message 
+      });
     }
   });
 
