@@ -10,6 +10,8 @@ import Landing from "@/pages/landing";
 import SignUp from "@/pages/signup";
 import Journal from "@/pages/journal";
 import VoiceNotes from "@/pages/voice-notes";
+import Habits from "@/pages/habits";
+import Analytics from "@/pages/analytics";
 
 function TimerComponent() {
   const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes in seconds
@@ -621,6 +623,8 @@ function AppContent() {
         <Route path="/timer" component={TimerComponent} />
         <Route path="/journal" component={Journal} />
         <Route path="/voice-notes" component={VoiceNotes} />
+        <Route path="/habits" component={Habits} />
+        <Route path="/analytics" component={Analytics} />
         <Route>
           <div className="min-h-screen pt-24 pb-8 px-4 md:px-8">
             <div className="max-w-4xl mx-auto text-center">

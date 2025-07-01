@@ -122,16 +122,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Failed to create test session" });
         }
         
-        // Check if client wants JSON response (for desktop) or redirect (for mobile)
-        const acceptsJson = req.headers.accept && req.headers.accept.includes('application/json');
-        
-        if (acceptsJson) {
-          // Desktop: send JSON response
-          res.json({ success: true, redirect: '/' });
-        } else {
-          // Mobile: direct server redirect
-          res.redirect('/');
-        }
+        // Always redirect for consistent mobile experience
+        // This ensures proper session handling across all devices
+        res.redirect('/');
       });
     } catch (error) {
       console.error("Error in test login:", error);

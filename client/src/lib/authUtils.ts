@@ -8,38 +8,13 @@ export function isMobile(): boolean {
   return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-// Mobile-optimized test login function with improved session handling
+// Simplified test login function that works reliably across all devices
 export async function performTestLogin(): Promise<boolean> {
   try {
-    const mobile = isMobile();
-    
-    // Use direct server-side redirect for mobile to ensure proper session handling
-    if (mobile) {
-      // Direct server redirect - most reliable for mobile
-      window.location.href = '/api/test-login';
-      return true;
-    } else {
-      // Desktop handling with JSON response
-      const response = await fetch('/api/test-login', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          window.location.href = data.redirect || '/';
-          return true;
-        }
-      }
-    }
-    
-    // Fallback - direct navigation
+    // Use direct server redirect for all devices - most reliable approach
+    // The server handles session creation and redirects to the dashboard
     window.location.href = '/api/test-login';
-    return false;
+    return true;
   } catch (error) {
     console.error('Test login error:', error);
     // Fallback - direct navigation
