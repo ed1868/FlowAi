@@ -11,10 +11,25 @@ export function isMobile(): boolean {
 // Simplified test login function that works reliably across all devices
 export async function performTestLogin(): Promise<boolean> {
   try {
-    // Use direct server redirect for all devices - most reliable approach
-    // The server handles session creation and redirects to the dashboard
-    window.location.href = '/api/test-login';
-    return true;
+    // For better user experience, use fetch to login then redirect
+    const response = await fetch('/api/test-login', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache',
+      }
+    });
+
+    if (response.ok) {
+      // Force page refresh to update auth state
+      window.location.reload();
+      return true;
+    } else {
+      // Fallback to direct navigation
+      window.location.href = '/api/test-login';
+      return false;
+    }
   } catch (error) {
     console.error('Test login error:', error);
     // Fallback - direct navigation
