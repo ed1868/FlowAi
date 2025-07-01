@@ -331,8 +331,17 @@ function SignupPage() {
         planId: selectedPlan.id,
         userInfo: userDataToUse,
       }) as any;
-      setClientSecret(response.clientSecret);
+      
+      console.log("Payment intent response:", response);
+      
+      if (response?.clientSecret) {
+        setClientSecret(response.clientSecret);
+        console.log("Client secret set:", response.clientSecret);
+      } else {
+        throw new Error("No client secret received");
+      }
     } catch (error) {
+      console.error("Payment intent error:", error);
       toast({
         title: "Error",
         description: "Failed to initialize payment. Please try again.",
