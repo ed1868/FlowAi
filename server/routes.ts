@@ -9,6 +9,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import Stripe from "stripe";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,17 +24,19 @@ import {
   insertUserPreferencesSchema,
 } from "@shared/schema";
 
-// Stripe configuration with placeholder
-let stripe: any = null;
+// Stripe configuration
+let stripe: Stripe | null = null;
 try {
-  const Stripe = require('stripe');
-  // Use placeholder key for now - will be replaced with real key
-  const stripeKey = process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_key';
-  stripe = new Stripe(stripeKey, {
-    apiVersion: '2023-10-16',
-  });
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  
+  if (stripeKey && stripeKey.startsWith('sk_')) {
+    stripe = new Stripe(stripeKey);
+    console.log('Stripe configured successfully');
+  } else {
+    console.log('Stripe not configured - payment features disabled');
+  }
 } catch (error) {
-  console.log('Stripe not configured - payment features disabled');
+  console.log('Stripe initialization error:', error);
 }
 
 // Set up multer for file uploads
