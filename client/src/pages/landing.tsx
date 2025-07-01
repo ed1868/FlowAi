@@ -85,8 +85,8 @@ export default function Landing() {
                 Test User
               </Button>
               <Button
-                onClick={() => window.location.href = '/signup'}
-                className="glass-button px-6 py-2 rounded-xl text-sm font-medium hover:bg-white/20"
+                onClick={() => window.location.href = '/subscribe'}
+                className="glass-button px-6 py-2 rounded-xl text-sm font-medium bg-apple-blue text-white hover:bg-apple-blue/90 shadow-lg shadow-apple-blue/25"
               >
                 Get Started
               </Button>
@@ -562,8 +562,8 @@ export default function Landing() {
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                 <Button
-                  onClick={() => window.location.href = '/signup'}
-                  className="glass-button px-8 py-4 rounded-2xl text-lg font-medium hover:animate-glow"
+                  onClick={() => window.location.href = '/subscribe'}
+                  className="glass-button px-8 py-4 rounded-2xl text-lg font-medium bg-apple-blue text-white hover:bg-apple-blue/90 shadow-lg shadow-apple-blue/25 hover:animate-glow"
                 >
                   <i className="fas fa-rocket mr-2"></i>
                   Start Free Trial
