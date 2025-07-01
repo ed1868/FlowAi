@@ -13,7 +13,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  Home
+  Home,
+  CreditCard
 } from "lucide-react";
 
 export default function Navigation() {
@@ -28,6 +29,7 @@ export default function Navigation() {
     { href: "/voice-notes", label: "Voice Notes", icon: Mic },
     { href: "/habits", label: "Habits", icon: TrendingUp },
     { href: "/analytics", label: "Analytics", icon: BarChart3 },
+    { href: "/payment-methods", label: "Payment", icon: CreditCard },
   ];
 
   const isActive = (href: string) => {
