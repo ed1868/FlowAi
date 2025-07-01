@@ -68,7 +68,7 @@ export default function Landing() {
             <div className="hidden md:flex items-center space-x-4">
               <Button
                 variant="ghost"
-                onClick={() => window.location.href = '/signup'}
+                onClick={() => window.location.href = '/api/login'}
                 className="text-text-secondary hover:text-text-primary"
               >
                 Sign In
@@ -144,7 +144,7 @@ export default function Landing() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    window.location.href = '/signup';
+                    window.location.href = '/api/login';
                     setMobileMenuOpen(false);
                   }}
                   className="w-full glass-button rounded-xl text-sm font-medium border-apple-blue/30 text-apple-blue hover:bg-apple-blue/10"

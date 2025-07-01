@@ -534,6 +534,13 @@ function SignupPage() {
         }
 
         // Handle paid plans with Stripe Elements
+        console.log("Checking payment setup:", { 
+          stripePromise: !!stripePromise, 
+          clientSecret, 
+          selectedPlan: selectedPlan?.id,
+          userInfo: !!userInfo 
+        });
+        
         if (!stripePromise || !clientSecret) {
           return (
             <div className="max-w-md mx-auto">
@@ -542,6 +549,11 @@ function SignupPage() {
                 <p className="text-text-secondary">
                   Payment processing is not configured. Please contact support.
                 </p>
+                <div className="mt-4 text-sm">
+                  <p>Debug info:</p>
+                  <p>Stripe: {stripePromise ? "✓" : "✗"}</p>
+                  <p>Client Secret: {clientSecret ? "✓" : "✗"}</p>
+                </div>
               </div>
             </div>
           );
