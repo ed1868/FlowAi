@@ -327,11 +327,12 @@ function SignupPage() {
     if (!userDataToUse) return;
 
     try {
-      const response = await apiRequest("POST", "/api/create-subscription", {
+      const res = await apiRequest("POST", "/api/create-subscription", {
         planId: selectedPlan.id,
         userInfo: userDataToUse,
-      }) as any;
+      });
       
+      const response = await res.json();
       console.log("Payment intent response:", response);
       
       if (response?.clientSecret) {
