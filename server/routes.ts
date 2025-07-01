@@ -100,17 +100,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: "Morning Meditation",
           description: "10 minutes of mindfulness to start the day",
           frequency: "daily",
-          targetValue: 1,
-          unit: "session"
+          targetCount: 1
         });
 
         // Add sample user preferences
         await storage.updateUserPreferences(testUser.claims.sub, {
           theme: "dark",
-          defaultSessionDuration: 90,
+          sessionDuration: 90,
           breakDuration: 15,
-          notificationsEnabled: true,
-          soundEnabled: true
+          notificationsEnabled: true
         });
       } catch (error) {
         // Don't fail the login if sample data creation fails
@@ -123,7 +121,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error during test login:", err);
           return res.status(500).json({ message: "Failed to create test session" });
         }
-        res.redirect('/');
+        
+        // Check if client wants JSON response (for desktop) or redirect (for mobile)
+        const acceptsJson = req.headers.accept && req.headers.accept.includes('application/json');
+        
+        if (acceptsJson) {
+          // Desktop: send JSON response
+          res.json({ success: true, redirect: '/' });
+        } else {
+          // Mobile: direct server redirect
+          res.redirect('/');
+        }
       });
     } catch (error) {
       console.error("Error in test login:", error);

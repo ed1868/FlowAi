@@ -7,9 +7,14 @@ export function useAuth() {
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     staleTime: 0, // Always refetch to ensure fresh auth state
+    gcTime: 0, // Don't cache auth data
     queryFn: async () => {
       const res = await fetch("/api/auth/user", {
         credentials: "include",
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
       });
       
       if (res.status === 401) {

@@ -8,33 +8,18 @@ export function isMobile(): boolean {
   return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-// Mobile-optimized test login function
+// Mobile-optimized test login function with improved session handling
 export async function performTestLogin(): Promise<boolean> {
   try {
     const mobile = isMobile();
     
-    // For mobile, use a simpler approach that avoids potential timing issues
+    // Use direct server-side redirect for mobile to ensure proper session handling
     if (mobile) {
-      // First, try the simple redirect approach for mobile
-      const response = await fetch('/api/test-login', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Force a full page reload to ensure session is properly set
-          window.location.replace('/');
-          return true;
-        }
-      }
+      // Direct server redirect - most reliable for mobile
+      window.location.href = '/api/test-login';
+      return true;
     } else {
-      // Desktop handling
+      // Desktop handling with JSON response
       const response = await fetch('/api/test-login', {
         method: 'GET',
         credentials: 'include',
@@ -63,14 +48,18 @@ export async function performTestLogin(): Promise<boolean> {
   }
 }
 
-// Enhanced login function for forms
+// Enhanced login function for forms with mobile-specific handling
 export async function performLogin(username: string, password: string): Promise<{ success: boolean; error?: string }> {
   try {
+    const mobile = isMobile();
+    
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       credentials: 'include',
       body: JSON.stringify({ username, password }),
@@ -79,9 +68,11 @@ export async function performLogin(username: string, password: string): Promise<
     const data = await response.json();
     
     if (response.ok && data.success) {
-      // For mobile, use replace to avoid navigation issues
-      if (isMobile()) {
-        window.location.replace('/');
+      // For mobile, wait a bit then use location.replace for better session handling
+      if (mobile) {
+        setTimeout(() => {
+          window.location.replace('/');
+        }, 100);
       } else {
         window.location.href = '/';
       }
