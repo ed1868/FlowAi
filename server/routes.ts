@@ -145,6 +145,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Signup route for free accounts
+  app.post('/api/signup', async (req, res) => {
+    try {
+      const { firstName, lastName, email, password, plan } = req.body;
+      
+      // For demo purposes, create a test user session
+      const userId = `user-${Date.now()}`;
+      
+      // Create user in storage
+      await storage.upsertUser({
+        id: userId,
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+      });
+
+      // Create mock session for the new user
+      const testUser = {
+        claims: {
+          sub: userId,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          profile_image_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60),
+        },
+        access_token: "new-user-access-token",
+        refresh_token: "new-user-refresh-token",
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60),
+      };
+
+      // Set up session
+      (req as any).session.user = testUser;
+      (req as any).session.authenticated = true;
+
+      res.json({
+        success: true,
+        message: "Account created successfully",
+        user: {
+          id: userId,
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+        }
+      });
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Failed to create account" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

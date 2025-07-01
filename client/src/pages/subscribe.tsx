@@ -13,9 +13,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Zap, Brain, Calendar, Mic } from "lucide-react";
 
-// Placeholder Stripe key - will be replaced with real key
-const STRIPE_PUBLIC_KEY = "pk_test_placeholder_key";
-const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
+// Get Stripe public key from environment
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = STRIPE_PUBLIC_KEY ? loadStripe(STRIPE_PUBLIC_KEY) : null;
 
 const signupSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -141,6 +141,60 @@ function PlanCard({ plan, isSelected, onSelect }: { plan: typeof SUBSCRIPTION_PL
         </ul>
       </CardContent>
     </Card>
+  );
+}
+
+function FreeSignupForm({ selectedPlan, userInfo }: { selectedPlan: typeof SUBSCRIPTION_PLANS[0], userInfo: SignupForm }) {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFreeSignup = async () => {
+    setIsLoading(true);
+    
+    try {
+      await apiRequest("POST", "/api/signup", {
+        ...userInfo,
+        plan: selectedPlan.id
+      });
+
+      toast({
+        title: "Account Created!",
+        description: "Welcome to Flow! Your free account is ready.",
+      });
+
+      // Redirect to welcome page
+      window.location.href = '/welcome';
+    } catch (error: any) {
+      toast({
+        title: "Signup Failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <p className="text-text-secondary mb-6">
+          Click the button below to create your free Flow account.
+        </p>
+      </div>
+      
+      <Button
+        onClick={handleFreeSignup}
+        disabled={isLoading}
+        className="w-full bg-apple-green hover:bg-apple-green/90 text-white py-3 rounded-xl"
+      >
+        {isLoading ? "Creating Account..." : "Create Free Account"}
+      </Button>
+      
+      <p className="text-xs text-text-secondary text-center">
+        By creating an account, you agree to our Terms of Service and Privacy Policy.
+      </p>
+    </div>
   );
 }
 
@@ -451,7 +505,11 @@ function SignupPage() {
 
             <Card>
               <CardContent className="p-6">
-                <PaymentForm selectedPlan={selectedPlan} userInfo={userInfo} />
+                {selectedPlan.price === 0 ? (
+                  <FreeSignupForm selectedPlan={selectedPlan} userInfo={userInfo} />
+                ) : (
+                  <PaymentForm selectedPlan={selectedPlan} userInfo={userInfo} />
+                )}
                 
                 <div className="text-center mt-6">
                   <Button
