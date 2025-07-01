@@ -102,8 +102,8 @@ function PlanCard({ plan, isSelected, onSelect }: { plan: typeof SUBSCRIPTION_PL
 
   return (
     <Card 
-      className={`relative cursor-pointer transition-all duration-200 ${colorClasses[plan.color]} ${
-        isSelected ? selectedClasses[plan.color] : 'hover:shadow-lg'
+      className={`relative cursor-pointer transition-all duration-200 ${colorClasses[plan.color as keyof typeof colorClasses]} ${
+        isSelected ? selectedClasses[plan.color as keyof typeof selectedClasses] : 'hover:shadow-lg'
       }`}
       onClick={onSelect}
     >
@@ -273,7 +273,7 @@ function SignupPage() {
       const response = await apiRequest("POST", "/api/create-subscription", {
         planId: selectedPlan.id,
         userInfo,
-      });
+      }) as any;
       setClientSecret(response.clientSecret);
     } catch (error) {
       toast({

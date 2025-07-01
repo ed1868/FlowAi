@@ -8,6 +8,8 @@ import Navigation from "@/components/navigation";
 import { Switch, Route } from "wouter";
 import Landing from "@/pages/landing";
 import SignUp from "@/pages/signup";
+import Subscribe from "@/pages/subscribe";
+import Welcome from "@/pages/welcome";
 import Journal from "@/pages/journal";
 import VoiceNotes from "@/pages/voice-notes";
 import Habits from "@/pages/habits";
@@ -610,6 +612,8 @@ function AppContent() {
     return (
       <Switch>
         <Route path="/signup" component={SignUp} />
+        <Route path="/subscribe" component={Subscribe} />
+        <Route path="/welcome" component={Welcome} />
         <Route path="*" component={Landing} />
       </Switch>
     );
