@@ -17,27 +17,22 @@ export default function SignUp() {
   const { toast } = useToast();
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(credentials),
-      });
+    mutationFn: async (data: { username: string; password: string }) => {
+      const { performLogin } = await import('@/lib/authUtils');
+      const result = await performLogin(data.username, data.password);
       
-      if (!response.ok) {
-        throw new Error("Invalid credentials");
+      if (!result.success) {
+        throw new Error(result.error || "Login failed");
       }
       
-      return response.json();
+      return result;
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Logged in successfully!",
       });
-      window.location.href = "/";
+      // Navigation is handled by performLogin
     },
     onError: (error: any) => {
       toast({

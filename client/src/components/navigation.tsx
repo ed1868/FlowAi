@@ -99,10 +99,15 @@ export default function Navigation() {
               </div>
               <div className="hidden md:block">
                 <div className="text-sm font-medium text-text-primary">
-                  User
+                  {user && typeof user === 'object' && 'firstName' in user && user.firstName ? 
+                    `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}` : 
+                    (user && typeof user === 'object' && 'email' in user && user.email ? 
+                      user.email.split('@')[0] : 'User')
+                  }
                 </div>
                 <div className="text-xs text-text-tertiary">
-                  {user && typeof user === 'object' && 'id' in user ? `ID: ${user.id}` : "Authenticated"}
+                  {user && typeof user === 'object' && 'email' in user && user.email ? 
+                    user.email : "Authenticated"}
                 </div>
               </div>
             </div>
@@ -130,6 +135,35 @@ export default function Navigation() {
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-glass">
+            {/* User Info in Mobile */}
+            <div className="flex items-center space-x-3 mb-4 px-4 py-3 rounded-xl bg-white/5">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-apple-blue to-apple-indigo flex items-center justify-center overflow-hidden">
+                {user && typeof user === 'object' && 'profileImageUrl' in user && user.profileImageUrl ? (
+                  <img
+                    src={user.profileImageUrl as string}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="text-white" size={20} />
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-text-primary">
+                  {user && typeof user === 'object' && 'firstName' in user && user.firstName ? 
+                    `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}` : 
+                    (user && typeof user === 'object' && 'email' in user && user.email ? 
+                      user.email.split('@')[0] : 'User')
+                  }
+                </div>
+                <div className="text-xs text-text-tertiary">
+                  {user && typeof user === 'object' && 'email' in user && user.email ? 
+                    user.email : "Authenticated"}
+                </div>
+              </div>
+            </div>
+            
+            {/* Navigation Items */}
             <div className="flex flex-col space-y-2">
               {navigationItems.map((item) => {
                 const IconComponent = item.icon;
@@ -150,6 +184,24 @@ export default function Navigation() {
                   </Link>
                 );
               })}
+              
+              {/* Logout Button in Mobile */}
+              <Button
+                variant="ghost"
+                className="w-full justify-start px-4 py-3 rounded-xl text-apple-red hover:bg-apple-red/10"
+                onClick={async () => {
+                  try {
+                    await fetch('/api/auth/logout', { method: 'POST' });
+                    window.location.href = '/';
+                  } catch (error) {
+                    console.error('Logout failed:', error);
+                    window.location.href = '/';
+                  }
+                }}
+              >
+                <LogOut size={16} className="mr-3" />
+                Sign Out
+              </Button>
             </div>
           </div>
         )}
