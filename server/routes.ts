@@ -970,6 +970,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { planId, userInfo } = req.body;
       
+      // Validate userInfo is provided
+      if (!userInfo || !userInfo.email) {
+        return res.status(400).json({ message: "User information is required" });
+      }
+      
       // Define subscription plans
       const plans = {
         free: { price: 0, name: "Free Plan" },
@@ -990,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create customer
       const customer = await stripe.customers.create({
         email: userInfo.email,
-        name: `${userInfo.firstName} ${userInfo.lastName}`,
+        name: `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim(),
         metadata: {
           planId: planId,
         },

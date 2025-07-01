@@ -309,24 +309,27 @@ function SignupPage() {
     },
   });
 
-  const onSubmitUserInfo = (data: SignupForm) => {
+  const onSubmitUserInfo = async (data: SignupForm) => {
     setUserInfo(data);
     if (selectedPlan?.price === 0) {
       setStep('payment'); // Even for free, we go to "payment" step which handles free signup
     } else {
       // Create payment intent for paid plans
-      createPaymentIntent();
+      await createPaymentIntent(data);
       setStep('payment');
     }
   };
 
-  const createPaymentIntent = async () => {
+  const createPaymentIntent = async (userData?: SignupForm) => {
     if (!selectedPlan || selectedPlan.price === 0) return;
+
+    const userDataToUse = userData || userInfo;
+    if (!userDataToUse) return;
 
     try {
       const response = await apiRequest("POST", "/api/create-subscription", {
         planId: selectedPlan.id,
-        userInfo,
+        userInfo: userDataToUse,
       }) as any;
       setClientSecret(response.clientSecret);
     } catch (error) {
