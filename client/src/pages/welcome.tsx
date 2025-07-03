@@ -51,10 +51,10 @@ function Welcome() {
 
   const quickActions = [
     {
-      title: "Start Your First Focus Session",
-      description: "Begin with a 90-minute deep work session",
-      action: "Go to Timer",
-      href: "/timer",
+      title: "Explore Your Dashboard",
+      description: "Start with your productivity dashboard and discover all features",
+      action: "Go to Dashboard",
+      href: "/",
       color: "bg-apple-blue"
     },
     {

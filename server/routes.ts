@@ -186,12 +186,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60),
       };
 
-      // Set up session using passport login
-      (req as any).login(testUser, (err: any) => {
-        if (err) {
-          console.error("Error during signup login:", err);
-        }
-      });
+      // Set up session manually since this is a custom signup
+      (req as any).session.passport = { user: testUser };
+      (req as any).user = testUser;
 
       res.json({
         success: true,
