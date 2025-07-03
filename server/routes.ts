@@ -238,6 +238,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sign in endpoint for email/password login
+  app.post('/api/signin', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      // For now, check against existing users in storage and validate credentials
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Create session for the user (simplified auth for now)
+      const sessionUser = {
+        claims: {
+          sub: user.id,
+          email: user.email,
+          first_name: user.firstName,
+          last_name: user.lastName,
+          profile_image_url: user.profileImageUrl,
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60),
+        },
+        access_token: "signin-access-token",
+        refresh_token: "signin-refresh-token",
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60),
+      };
+
+      // Set up session
+      (req as any).session.passport = { user: sessionUser };
+      (req as any).user = sessionUser;
+      
+      // Save the session
+      (req as any).session.save((err: any) => {
+        if (err) {
+          console.error("Error saving signin session:", err);
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        res.json({
+          success: true,
+          message: "Signed in successfully",
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profileImageUrl: user.profileImageUrl
+          }
+        });
+      });
+    } catch (error) {
+      console.error("Sign in error:", error);
+      res.status(500).json({ message: "Failed to sign in" });
+    }
+  });
+
   // Auth logout endpoint  
   app.post('/api/auth/logout', (req, res) => {
     try {
