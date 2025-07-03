@@ -238,6 +238,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auth logout endpoint  
+  app.post('/api/auth/logout', (req, res) => {
+    try {
+      // Clear the session completely
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error("Error destroying session:", err);
+            return res.status(500).json({ success: false, message: "Could not log out" });
+          }
+          // Clear the cookie as well
+          res.clearCookie('connect.sid');
+          res.json({ success: true });
+        });
+      } else {
+        res.json({ success: true });
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ success: false, message: "Could not log out" });
+    }
+  });
+
   // Focus Sessions API
   app.post('/api/sessions', isAuthenticated, async (req: any, res) => {
     try {

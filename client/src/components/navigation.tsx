@@ -120,11 +120,16 @@ export default function Navigation() {
               size="sm"
               onClick={async () => {
                 try {
-                  await fetch('/api/auth/logout', { method: 'POST' });
-                  window.location.href = '/';
+                  await fetch('/api/auth/logout', { 
+                    method: 'POST',
+                    credentials: 'include' 
+                  });
+                  // Force a full page reload to clear all cached state
+                  window.location.reload();
                 } catch (error) {
                   console.error('Logout failed:', error);
-                  window.location.href = '/';
+                  // Force reload even if logout fails
+                  window.location.reload();
                 }
               }}
               className="text-text-secondary hover:text-apple-red"
@@ -193,11 +198,16 @@ export default function Navigation() {
                 className="w-full justify-start px-4 py-3 rounded-xl text-apple-red hover:bg-apple-red/10"
                 onClick={async () => {
                   try {
-                    await fetch('/api/auth/logout', { method: 'POST' });
-                    window.location.href = '/';
+                    await fetch('/api/auth/logout', { 
+                      method: 'POST',
+                      credentials: 'include' 
+                    });
+                    // Force a full page reload to clear all cached state
+                    window.location.reload();
                   } catch (error) {
                     console.error('Logout failed:', error);
-                    window.location.href = '/';
+                    // Force reload even if logout fails
+                    window.location.reload();
                   }
                 }}
               >
