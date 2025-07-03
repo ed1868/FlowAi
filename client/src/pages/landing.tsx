@@ -79,14 +79,10 @@ export default function Landing() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => {
-                  import('@/lib/authUtils').then(({ performTestLogin }) => {
-                    performTestLogin();
-                  });
-                }}
-                className="glass-button px-4 py-2 rounded-xl text-sm font-medium border-apple-blue/30 text-apple-blue hover:bg-apple-blue/10"
+                onClick={() => window.location.href = '/subscribe'}
+                className="glass-button px-4 py-2 rounded-xl text-sm font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
               >
-                Test User
+                Sign In
               </Button>
               <Button
                 onClick={() => window.location.href = '/subscribe'}
@@ -156,6 +152,16 @@ export default function Landing() {
                   className="w-full glass-button rounded-xl text-sm font-medium border-apple-blue/30 text-apple-blue hover:bg-apple-blue/10"
                 >
                   Try Demo
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    window.location.href = '/subscribe';
+                  }}
+                  className="w-full glass-button rounded-xl text-sm font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
+                >
+                  Sign In
                 </Button>
                 <Button
                   onClick={() => {
