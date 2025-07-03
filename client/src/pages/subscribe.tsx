@@ -214,21 +214,55 @@ function PaymentForm({ selectedPlan, userInfo }: { selectedPlan: typeof SUBSCRIP
     setIsLoading(true);
 
     try {
-      const result = await stripe.confirmPayment({
+      console.log('Confirming payment with Stripe...');
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/welcome`,
         },
+        redirect: 'if_required',
       });
 
-      if (result.error) {
+      console.log('Payment confirmation result:', { error, paymentIntentStatus: paymentIntent?.status });
+
+      if (error) {
+        console.error('Payment confirmation error:', error);
         toast({
           title: "Payment Failed",
-          description: result.error.message,
+          description: error.message,
           variant: "destructive",
         });
+        setIsLoading(false);
+        return;
       }
-      // If no error, Stripe will redirect to the return_url automatically
+
+      // Payment succeeded - create user account and redirect
+      try {
+        await apiRequest("POST", "/api/signup", {
+          ...userInfo,
+          plan: selectedPlan.id,
+        });
+        
+        toast({
+          title: "Welcome to Flow!",
+          description: "Your subscription is active!",
+        });
+        
+        // Redirect to welcome page
+        setTimeout(() => {
+          window.location.href = '/welcome';
+        }, 1000);
+        
+      } catch (accountError) {
+        console.error('Account creation error:', accountError);
+        toast({
+          title: "Payment Successful",
+          description: "Your payment went through! Redirecting to welcome page...",
+        });
+        setTimeout(() => {
+          window.location.href = '/welcome';
+        }, 1500);
+      }
     } catch (error) {
       toast({
         title: "Payment Error",
