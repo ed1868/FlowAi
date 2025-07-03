@@ -186,9 +186,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60),
       };
 
-      // Set up session
-      (req as any).session.user = testUser;
-      (req as any).session.authenticated = true;
+      // Set up session using passport login
+      (req as any).login(testUser, (err: any) => {
+        if (err) {
+          console.error("Error during signup login:", err);
+        }
+      });
 
       res.json({
         success: true,
@@ -1007,22 +1010,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      // Create payment intent for subscription
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: selectedPlan.price,
+      // Create product and price for subscription
+      const product = await stripe.products.create({
+        name: selectedPlan.name,
+      });
+
+      const price = await stripe.prices.create({
         currency: 'usd',
+        unit_amount: selectedPlan.price,
+        recurring: { interval: 'month' },
+        product: product.id,
+      });
+
+      // Create subscription with payment intent
+      const subscription = await stripe.subscriptions.create({
         customer: customer.id,
+        items: [{ price: price.id }],
+        payment_behavior: 'default_incomplete',
+        payment_settings: {
+          save_default_payment_method: 'on_subscription',
+        },
+        expand: ['latest_invoice.payment_intent'],
         metadata: {
           planId: planId,
           customerEmail: userInfo.email,
         },
-        automatic_payment_methods: {
-          enabled: true,
-        },
       });
 
+      const invoice = subscription.latest_invoice as any;
+      const paymentIntent = invoice?.payment_intent;
+
       res.json({
-        clientSecret: paymentIntent.client_secret,
+        clientSecret: paymentIntent?.client_secret,
+        subscriptionId: subscription.id,
         customerId: customer.id,
       });
 
@@ -1054,19 +1074,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle the event
       switch (event.type) {
-        case 'payment_intent.succeeded':
-          const paymentIntent = event.data.object;
-          console.log('Payment succeeded:', paymentIntent.id);
-          
-          // Here you would typically:
-          // 1. Create user account in your database
-          // 2. Activate their subscription
-          // 3. Send welcome email
-          
+        case 'invoice.payment_succeeded':
+          const invoice = event.data.object as any;
+          console.log('Subscription payment succeeded:', invoice.subscription);
+          // User account creation will be handled on the frontend after successful payment
           break;
+          
         case 'customer.subscription.deleted':
           // Handle subscription cancellation
+          console.log('Subscription cancelled:', event.data.object.id);
           break;
+          
         default:
           console.log(`Unhandled event type ${event.type}`);
       }

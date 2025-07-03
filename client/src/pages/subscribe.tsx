@@ -214,20 +214,21 @@ function PaymentForm({ selectedPlan, userInfo }: { selectedPlan: typeof SUBSCRIP
     setIsLoading(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
+      const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/welcome`,
         },
       });
 
-      if (error) {
+      if (result.error) {
         toast({
           title: "Payment Failed",
-          description: error.message,
+          description: result.error.message,
           variant: "destructive",
         });
       }
+      // If no error, Stripe will redirect to the return_url automatically
     } catch (error) {
       toast({
         title: "Payment Error",

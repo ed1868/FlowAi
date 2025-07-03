@@ -8,6 +8,17 @@ function Welcome() {
   useEffect(() => {
     // Confetti or celebration effect could go here
     document.title = "Welcome to Flow!";
+    
+    // Check if user came from payment success
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentIntent = urlParams.get('payment_intent');
+    const redirectStatus = urlParams.get('redirect_status');
+    
+    if (paymentIntent && redirectStatus === 'succeeded') {
+      // Payment was successful, but we need to create the user account
+      // This would typically be handled by a webhook, but for now we'll handle it here
+      console.log('Payment successful:', paymentIntent);
+    }
   }, []);
 
   const features = [
