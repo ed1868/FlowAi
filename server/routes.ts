@@ -1022,26 +1022,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         product: product.id,
       });
 
-      // Create subscription with payment intent
+      // Create a payment intent first, then attach it to a subscription
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: selectedPlan.price,
+        currency: 'usd',
+        customer: customer.id,
+        setup_future_usage: 'off_session', // for recurring payments
+        metadata: {
+          planId: planId,
+          customerEmail: userInfo.email,
+          subscriptionCreation: 'true'
+        },
+      });
+
+      // Create subscription in incomplete state
       const subscription = await stripe.subscriptions.create({
         customer: customer.id,
         items: [{ price: price.id }],
         payment_behavior: 'default_incomplete',
-        payment_settings: {
-          save_default_payment_method: 'on_subscription',
-        },
-        expand: ['latest_invoice.payment_intent'],
+        default_payment_method: undefined, // Will be set after payment
         metadata: {
           planId: planId,
           customerEmail: userInfo.email,
+          paymentIntentId: paymentIntent.id,
         },
       });
 
-      const invoice = subscription.latest_invoice as any;
-      const paymentIntent = invoice?.payment_intent;
+      const clientSecret = paymentIntent.client_secret;
+      if (!clientSecret) {
+        throw new Error('Failed to create payment intent client secret');
+      }
 
       res.json({
-        clientSecret: paymentIntent?.client_secret,
+        clientSecret: clientSecret,
         subscriptionId: subscription.id,
         customerId: customer.id,
       });
