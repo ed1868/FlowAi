@@ -79,7 +79,11 @@ export default function Landing() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => window.location.href = '/subscribe'}
+                onClick={() => {
+                  import('@/lib/authUtils').then(({ performTestLogin }) => {
+                    performTestLogin();
+                  });
+                }}
                 className="glass-button px-4 py-2 rounded-xl text-sm font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
               >
                 Sign In
@@ -157,7 +161,9 @@ export default function Landing() {
                   variant="outline"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    window.location.href = '/subscribe';
+                    import('@/lib/authUtils').then(({ performTestLogin }) => {
+                      performTestLogin();
+                    });
                   }}
                   className="w-full glass-button rounded-xl text-sm font-medium border-apple-green/30 text-apple-green hover:bg-apple-green/10"
                 >
