@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupBasicAuth, isAuthenticated } from "./basicAuth";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { analyzeJournalEntries, generateDailyReflection, analyzeVoiceNotes, generateAdviceFromVoiceNotes } from "./openai";
 import { z } from "zod";
 import multer from "multer";
@@ -69,7 +69,7 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupBasicAuth(app);
+  await setupAuth(app);
 
   // Test login route
   app.get('/api/test-login', async (req: any, res) => {
@@ -189,6 +189,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set up session manually since this is a custom signup
       (req as any).session.passport = { user: testUser };
       (req as any).user = testUser;
+      
+      // Save the session to ensure it persists
+      (req as any).session.save((err: any) => {
+        if (err) {
+          console.error("Error saving session:", err);
+        }
+      });
 
       res.json({
         success: true,

@@ -68,10 +68,14 @@ export default function Landing() {
             <div className="hidden md:flex items-center space-x-4">
               <Button
                 variant="ghost"
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => {
+                  import('@/lib/authUtils').then(({ performTestLogin }) => {
+                    performTestLogin();
+                  });
+                }}
                 className="text-text-secondary hover:text-text-primary"
               >
-                Sign In
+                Try Demo
               </Button>
               <Button
                 variant="outline"
@@ -144,12 +148,14 @@ export default function Landing() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    window.location.href = '/api/login';
                     setMobileMenuOpen(false);
+                    import('@/lib/authUtils').then(({ performTestLogin }) => {
+                      performTestLogin();
+                    });
                   }}
                   className="w-full glass-button rounded-xl text-sm font-medium border-apple-blue/30 text-apple-blue hover:bg-apple-blue/10"
                 >
-                  Sign In
+                  Try Demo
                 </Button>
                 <Button
                   onClick={() => {
