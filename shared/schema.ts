@@ -110,6 +110,8 @@ export const habits = pgTable("habits", {
   bestStreak: integer("best_streak").default(0),
   totalBreaks: integer("total_breaks").default(0),
   isActive: boolean("is_active").default(true),
+  goalMeaning: text("goal_meaning"), // What it means to achieve this goal
+  goalFeeling: text("goal_feeling"), // How they would feel achieving it
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -118,7 +120,7 @@ export const habitEntries = pgTable("habit_entries", {
   id: serial("id").primaryKey(),
   habitId: integer("habit_id").notNull().references(() => habits.id),
   userId: varchar("user_id").notNull().references(() => users.id),
-  date: timestamp("date").notNull(),
+  date: varchar("date").notNull(), // Store as YYYY-MM-DD string
   completed: boolean("completed").default(false),
   count: integer("count").default(0),
   notes: text("notes"),

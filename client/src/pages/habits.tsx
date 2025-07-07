@@ -21,6 +21,11 @@ interface Habit {
   color: string;
   frequency: string;
   targetCount: number;
+  durationValue: number;
+  durationType: string;
+  currentStreak: number;
+  goalMeaning?: string;
+  goalFeeling?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -75,7 +80,10 @@ export default function Habits() {
   const [isHabitDialogOpen, setIsHabitDialogOpen] = useState(false);
   const [isRitualDialogOpen, setIsRitualDialogOpen] = useState(false);
   const [isStruggleDialogOpen, setIsStruggleDialogOpen] = useState(false);
+  const [isBreakDialogOpen, setIsBreakDialogOpen] = useState(false);
   const [selectedHabitId, setSelectedHabitId] = useState<number | null>(null);
+  const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
+  const [breakReason, setBreakReason] = useState("");
   
   // Habit form state
   const [habitForm, setHabitForm] = useState({
@@ -87,6 +95,8 @@ export default function Habits() {
     targetCount: 1,
     durationValue: 30,
     durationType: "days",
+    goalMeaning: "",
+    goalFeeling: "",
   });
   
   // Ritual form state
@@ -334,6 +344,8 @@ export default function Habits() {
       targetCount: 1,
       durationValue: 30,
       durationType: "days",
+      goalMeaning: "",
+      goalFeeling: "",
     });
   };
 
@@ -390,6 +402,8 @@ export default function Habits() {
       targetCount: 1,
       durationValue: 30,
       durationType: "days",
+      goalMeaning: "",
+      goalFeeling: "",
     });
   };
 
@@ -416,8 +430,23 @@ export default function Habits() {
   };
 
   const handleBreakHabit = (habitId: number) => {
-    const reason = prompt("Why did you break this habit? (optional)");
-    createHabitBreakMutation.mutate({ habitId, reason: reason || undefined });
+    const habit = habits.find(h => h.id === habitId);
+    setSelectedHabit(habit || null);
+    setSelectedHabitId(habitId);
+    setIsBreakDialogOpen(true);
+  };
+
+  const confirmBreakHabit = () => {
+    if (selectedHabitId) {
+      createHabitBreakMutation.mutate({ 
+        habitId: selectedHabitId, 
+        reason: breakReason || undefined 
+      });
+      setIsBreakDialogOpen(false);
+      setBreakReason("");
+      setSelectedHabit(null);
+      setSelectedHabitId(null);
+    }
   };
 
   if (authLoading || habitsLoading || ritualsLoading) {
@@ -562,6 +591,33 @@ export default function Habits() {
                         <p className="text-xs text-text-tertiary mt-1">
                           Track progress like "5/30 days" or "2/8 weeks"
                         </p>
+                      </div>
+                      
+                      {/* Goal Meaning Section */}
+                      <div className="space-y-4 p-4 glass-button rounded-xl">
+                        <div className="text-center">
+                          <i className="fas fa-heart text-apple-pink text-xl mb-2"></i>
+                          <h4 className="font-medium text-text-primary">What This Goal Means to You</h4>
+                          <p className="text-xs text-text-tertiary">Understanding your 'why' makes habits stick</p>
+                        </div>
+                        <div>
+                          <Textarea
+                            placeholder="What would achieving this habit mean to you? (e.g., 'I'll feel more confident and healthy')"
+                            value={habitForm.goalMeaning}
+                            onChange={(e) => setHabitForm(prev => ({ ...prev, goalMeaning: e.target.value }))}
+                            className="glass-button border-none focus:ring-2 focus:ring-apple-pink"
+                            rows={2}
+                          />
+                        </div>
+                        <div>
+                          <Textarea
+                            placeholder="How would you feel when you achieve this? (e.g., 'Proud, energized, accomplished')"
+                            value={habitForm.goalFeeling}
+                            onChange={(e) => setHabitForm(prev => ({ ...prev, goalFeeling: e.target.value }))}
+                            className="glass-button border-none focus:ring-2 focus:ring-apple-pink"
+                            rows={2}
+                          />
+                        </div>
                       </div>
                       
                       <div className="flex gap-2">
@@ -875,6 +931,88 @@ export default function Habits() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Break Habit Dialog */}
+      <Dialog open={isBreakDialogOpen} onOpenChange={setIsBreakDialogOpen}>
+        <DialogContent className="glass-card border-none max-w-md">
+          <div className="text-center space-y-6">
+            {/* Header with broken heart icon */}
+            <div className="space-y-3">
+              <div className="w-16 h-16 mx-auto bg-red-500/20 rounded-full flex items-center justify-center">
+                <i className="fas fa-heart-broken text-2xl text-red-400"></i>
+              </div>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold text-text-primary">
+                  Breaking Your Habit
+                </DialogTitle>
+              </DialogHeader>
+            </div>
+
+            {/* Reminder of their goal */}
+            {selectedHabit && (selectedHabit.goalMeaning || selectedHabit.goalFeeling) && (
+              <div className="p-4 bg-apple-pink/10 rounded-xl space-y-2">
+                <div className="text-sm text-text-secondary">
+                  <i className="fas fa-quote-left text-apple-pink mr-1"></i>
+                  Remember what this meant to you:
+                </div>
+                {selectedHabit.goalMeaning && (
+                  <p className="text-sm text-text-primary italic">
+                    "{selectedHabit.goalMeaning}"
+                  </p>
+                )}
+                {selectedHabit.goalFeeling && (
+                  <p className="text-sm text-apple-pink">
+                    You wanted to feel: {selectedHabit.goalFeeling}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Reason input */}
+            <div className="space-y-3">
+              <p className="text-sm text-text-secondary">
+                It's okay to stumble. What happened? (This helps you learn and grow)
+              </p>
+              <Textarea
+                placeholder="What led to this? Be honest with yourself..."
+                value={breakReason}
+                onChange={(e) => setBreakReason(e.target.value)}
+                className="glass-button border-none focus:ring-2 focus:ring-red-400 text-center"
+                rows={3}
+              />
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-3">
+              <Button
+                onClick={confirmBreakHabit}
+                disabled={createHabitBreakMutation.isPending}
+                className="w-full bg-red-500 hover:bg-red-600 text-white"
+              >
+                {createHabitBreakMutation.isPending ? "Recording..." : "Reset & Start Fresh"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsBreakDialogOpen(false);
+                  setBreakReason("");
+                  setSelectedHabit(null);
+                  setSelectedHabitId(null);
+                }}
+                variant="ghost"
+                className="w-full text-text-secondary hover:text-text-primary"
+              >
+                Never Mind, Keep Going
+              </Button>
+            </div>
+
+            {/* Encouraging message */}
+            <div className="text-xs text-text-tertiary bg-apple-green/10 p-3 rounded-lg">
+              <i className="fas fa-seedling text-apple-green mr-1"></i>
+              Every reset is a chance to grow stronger. You've got this! 🌱
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

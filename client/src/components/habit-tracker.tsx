@@ -14,6 +14,11 @@ interface Habit {
   color: string;
   frequency: string;
   targetCount: number;
+  durationValue: number;
+  durationType: string;
+  currentStreak: number;
+  goalMeaning?: string;
+  goalFeeling?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -135,7 +140,7 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
   });
 
   const toggleHabit = async (habit: Habit) => {
-    const today = new Date().toISOString();
+    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
     const existingEntry = todayEntries.find(entry => entry.habitId === habit.id);
     
     if (existingEntry) {
