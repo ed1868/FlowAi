@@ -85,6 +85,8 @@ export default function Habits() {
     color: "#007AFF",
     frequency: "daily",
     targetCount: 1,
+    durationValue: 30,
+    durationType: "days",
   });
   
   // Ritual form state
@@ -287,6 +289,41 @@ export default function Habits() {
     },
   });
 
+  // Create habit break mutation
+  const createHabitBreakMutation = useMutation({
+    mutationFn: async (data: { habitId: number; reason?: string }) => {
+      const response = await apiRequest("POST", `/api/habits/${data.habitId}/breaks`, {
+        reason: data.reason,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Habit break recorded",
+        description: "It's okay to stumble. Your counter has been reset and you can start fresh!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to record habit break",
+        variant: "destructive",
+      });
+    },
+  });
+
   const resetHabitForm = () => {
     setHabitForm({
       name: "",
@@ -295,6 +332,8 @@ export default function Habits() {
       color: "#007AFF",
       frequency: "daily",
       targetCount: 1,
+      durationValue: 30,
+      durationType: "days",
     });
   };
 
@@ -349,6 +388,8 @@ export default function Habits() {
       ...defaultHabit,
       frequency: "daily",
       targetCount: 1,
+      durationValue: 30,
+      durationType: "days",
     });
   };
 
@@ -372,6 +413,11 @@ export default function Habits() {
   const openStruggleDialog = (habitId: number) => {
     setSelectedHabitId(habitId);
     setIsStruggleDialogOpen(true);
+  };
+
+  const handleBreakHabit = (habitId: number) => {
+    const reason = prompt("Why did you break this habit? (optional)");
+    createHabitBreakMutation.mutate({ habitId, reason: reason || undefined });
   };
 
   if (authLoading || habitsLoading || ritualsLoading) {
@@ -485,6 +531,39 @@ export default function Habits() {
                           />
                         </div>
                       </div>
+                      
+                      {/* Duration Selection */}
+                      <div>
+                        <label className="text-sm text-text-secondary block mb-2">Habit Duration Goal</label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Input
+                              type="number"
+                              placeholder="Duration"
+                              value={habitForm.durationValue}
+                              onChange={(e) => setHabitForm(prev => ({ ...prev, durationValue: parseInt(e.target.value) || 1 }))}
+                              className="glass-button border-none focus:ring-2 focus:ring-apple-blue"
+                              min="1"
+                            />
+                          </div>
+                          <div>
+                            <Select value={habitForm.durationType} onValueChange={(value) => setHabitForm(prev => ({ ...prev, durationType: value }))}>
+                              <SelectTrigger className="glass-button border-none">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="days">Days</SelectItem>
+                                <SelectItem value="weeks">Weeks</SelectItem>
+                                <SelectItem value="months">Months</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <p className="text-xs text-text-tertiary mt-1">
+                          Track progress like "5/30 days" or "2/8 weeks"
+                        </p>
+                      </div>
+                      
                       <div className="flex gap-2">
                         <Button
                           type="submit"
@@ -506,7 +585,7 @@ export default function Habits() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                <HabitTracker onStruggleClick={openStruggleDialog} />
+                <HabitTracker onStruggleClick={openStruggleDialog} onBreakHabit={handleBreakHabit} />
               </CardContent>
             </Card>
 

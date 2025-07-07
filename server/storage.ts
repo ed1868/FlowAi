@@ -6,6 +6,7 @@ import {
   habits,
   habitEntries,
   habitStruggles,
+  habitBreaks,
   resetRituals,
   resetCompletions,
   userPreferences,
@@ -26,6 +27,8 @@ import {
   type InsertHabitEntry,
   type HabitStruggle,
   type InsertHabitStruggle,
+  type HabitBreak,
+  type InsertHabitBreak,
   type ResetRitual,
   type InsertResetRitual,
   type ResetCompletion,
@@ -63,6 +66,7 @@ export interface IStorage {
   
   // Habit operations
   createHabit(habit: InsertHabit): Promise<Habit>;
+  getHabit(habitId: number, userId: string): Promise<Habit | undefined>;
   updateHabit(habitId: number, userId: string, updateData: Partial<InsertHabit>): Promise<Habit | undefined>;
   deleteHabit(habitId: number, userId: string): Promise<boolean>;
   getUserHabits(userId: string): Promise<Habit[]>;
@@ -76,6 +80,11 @@ export interface IStorage {
   createHabitStruggle(struggle: InsertHabitStruggle): Promise<HabitStruggle>;
   getHabitStruggles(habitId: number, userId: string): Promise<HabitStruggle[]>;
   deleteHabitStruggle(struggleId: number, userId: string): Promise<boolean>;
+  
+  // Habit break operations
+  createHabitBreak(habitBreak: InsertHabitBreak): Promise<HabitBreak>;
+  getHabitBreaks(habitId: number, userId: string): Promise<HabitBreak[]>;
+  updateHabitAfterBreak(habitId: number, userId: string, previousStreak: number): Promise<Habit | undefined>;
   
   // Reset ritual operations
   createResetRitual(ritual: InsertResetRitual): Promise<ResetRitual>;
@@ -249,6 +258,14 @@ export class DatabaseStorage implements IStorage {
     return newHabit;
   }
 
+  async getHabit(habitId: number, userId: string): Promise<Habit | undefined> {
+    const [habit] = await db
+      .select()
+      .from(habits)
+      .where(and(eq(habits.id, habitId), eq(habits.userId, userId)));
+    return habit;
+  }
+
   async updateHabit(habitId: number, userId: string, updateData: Partial<InsertHabit>): Promise<Habit | undefined> {
     const [updatedHabit] = await db
       .update(habits)
@@ -340,6 +357,36 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return result.rowCount > 0;
+  }
+
+  // Habit break operations
+  async createHabitBreak(habitBreak: InsertHabitBreak): Promise<HabitBreak> {
+    const [newBreak] = await db
+      .insert(habitBreaks)
+      .values(habitBreak)
+      .returning();
+    return newBreak;
+  }
+
+  async getHabitBreaks(habitId: number, userId: string): Promise<HabitBreak[]> {
+    return await db
+      .select()
+      .from(habitBreaks)
+      .where(and(eq(habitBreaks.habitId, habitId), eq(habitBreaks.userId, userId)))
+      .orderBy(desc(habitBreaks.createdAt));
+  }
+
+  async updateHabitAfterBreak(habitId: number, userId: string, previousStreak: number): Promise<Habit | undefined> {
+    const [updated] = await db
+      .update(habits)
+      .set({
+        currentStreak: 0,
+        bestStreak: sql`GREATEST(${habits.bestStreak}, ${previousStreak})`,
+        totalBreaks: sql`${habits.totalBreaks} + 1`,
+      })
+      .where(and(eq(habits.id, habitId), eq(habits.userId, userId)))
+      .returning();
+    return updated;
   }
 
   // Reset ritual operations

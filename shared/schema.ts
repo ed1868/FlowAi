@@ -104,6 +104,11 @@ export const habits = pgTable("habits", {
   color: varchar("color").default("#007AFF"),
   frequency: varchar("frequency").default("daily"), // 'daily', 'weekly'
   targetCount: integer("target_count").default(1),
+  durationValue: integer("duration_value").default(30), // e.g., 1, 2, 3
+  durationType: varchar("duration_type").default("days"), // 'days', 'weeks', 'months'
+  currentStreak: integer("current_streak").default(0),
+  bestStreak: integer("best_streak").default(0),
+  totalBreaks: integer("total_breaks").default(0),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -130,6 +135,16 @@ export const habitStruggles = pgTable("habit_struggles", {
   triggers: text("triggers"), // comma-separated triggers
   location: varchar("location"),
   mood: varchar("mood"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Habit breaks tracking table
+export const habitBreaks = pgTable("habit_breaks", {
+  id: serial("id").primaryKey(),
+  habitId: integer("habit_id").notNull().references(() => habits.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  reason: text("reason"),
+  previousStreak: integer("previous_streak").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -229,6 +244,11 @@ export const insertHabitStruggleSchema = createInsertSchema(habitStruggles).omit
   createdAt: true,
 });
 
+export const insertHabitBreakSchema = createInsertSchema(habitBreaks).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -252,3 +272,5 @@ export type UserVoiceClone = typeof userVoiceClones.$inferSelect;
 export type InsertUserVoiceClone = z.infer<typeof insertUserVoiceCloneSchema>;
 export type HabitStruggle = typeof habitStruggles.$inferSelect;
 export type InsertHabitStruggle = z.infer<typeof insertHabitStruggleSchema>;
+export type HabitBreak = typeof habitBreaks.$inferSelect;
+export type InsertHabitBreak = z.infer<typeof insertHabitBreakSchema>;

@@ -32,9 +32,10 @@ interface HabitEntry {
 interface HabitTrackerProps {
   simplified?: boolean;
   onStruggleClick?: (habitId: number) => void;
+  onBreakHabit?: (habitId: number) => void;
 }
 
-export default function HabitTracker({ simplified = false, onStruggleClick }: HabitTrackerProps) {
+export default function HabitTracker({ simplified = false, onStruggleClick, onBreakHabit }: HabitTrackerProps) {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -166,10 +167,12 @@ export default function HabitTracker({ simplified = false, onStruggleClick }: Ha
     return todayEntries.some(entry => entry.habitId === habitId && entry.completed);
   };
 
-  const getHabitStreak = (habit: Habit) => {
-    // This is a simplified streak calculation
-    // In a real app, you'd calculate this on the server
-    return Math.floor(Math.random() * 10) + 1; // Mock streak for now
+  const getHabitProgress = (habit: Habit) => {
+    // Use actual currentStreak from the database
+    const current = habit.currentStreak || 0;
+    const total = habit.durationValue || 30;
+    const type = habit.durationType || "days";
+    return { current, total, type };
   };
 
   if (simplified) {
@@ -178,7 +181,7 @@ export default function HabitTracker({ simplified = false, onStruggleClick }: Ha
         {habits.length > 0 ? (
           habits.slice(0, 3).map((habit) => {
             const completed = isHabitCompleted(habit.id);
-            const streak = getHabitStreak(habit);
+            const progress = getHabitProgress(habit);
             
             return (
               <div key={habit.id} className="flex items-center justify-between p-3 glass-button rounded-xl">
@@ -199,7 +202,7 @@ export default function HabitTracker({ simplified = false, onStruggleClick }: Ha
                   </span>
                 </div>
                 <div className={`text-sm ${completed ? "text-apple-green" : "text-apple-blue"}`}>
-                  🔥 {streak} days
+                  {progress.current}/{progress.total} {progress.type}
                 </div>
               </div>
             );
@@ -219,7 +222,7 @@ export default function HabitTracker({ simplified = false, onStruggleClick }: Ha
       {habits.length > 0 ? (
         habits.map((habit) => {
           const completed = isHabitCompleted(habit.id);
-          const streak = getHabitStreak(habit);
+          const progress = getHabitProgress(habit);
           
           return (
             <div key={habit.id} className="flex items-center justify-between p-4 glass-button rounded-xl">
@@ -249,9 +252,9 @@ export default function HabitTracker({ simplified = false, onStruggleClick }: Ha
               <div className="flex items-center space-x-4">
                 <div className="text-center">
                   <div className={`text-sm font-medium ${completed ? "text-apple-green" : "text-apple-blue"}`}>
-                    🔥 {streak}
+                    {progress.current}/{progress.total}
                   </div>
-                  <div className="text-xs text-text-tertiary">days</div>
+                  <div className="text-xs text-text-tertiary">{progress.type}</div>
                 </div>
                 
                 {onStruggleClick && (
@@ -263,6 +266,18 @@ export default function HabitTracker({ simplified = false, onStruggleClick }: Ha
                     title="Log hard moment"
                   >
                     <i className="fas fa-exclamation text-sm"></i>
+                  </Button>
+                )}
+                
+                {onBreakHabit && (
+                  <Button
+                    onClick={() => onBreakHabit(habit.id)}
+                    variant="ghost"
+                    size="sm"
+                    className="w-10 h-10 rounded-full border-2 border-red-400 text-red-400 hover:bg-red-400 hover:text-white"
+                    title="I broke my habit"
+                  >
+                    <i className="fas fa-times text-sm"></i>
                   </Button>
                 )}
                 

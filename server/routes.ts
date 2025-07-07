@@ -20,6 +20,7 @@ import {
   insertHabitSchema,
   insertHabitEntrySchema,
   insertHabitStruggleSchema,
+  insertHabitBreakSchema,
   insertResetRitualSchema,
   insertResetCompletionSchema,
   insertUserPreferencesSchema,
@@ -681,6 +682,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting habit struggle:", error);
       res.status(400).json({ message: "Failed to delete habit struggle" });
+    }
+  });
+
+  // Habit Breaks API
+  app.post('/api/habits/:habitId/breaks', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const habitId = parseInt(req.params.habitId);
+      
+      // Get current habit to get current streak
+      const habit = await storage.getHabit(habitId, userId);
+      if (!habit) {
+        return res.status(404).json({ message: "Habit not found" });
+      }
+
+      const breakData = insertHabitBreakSchema.parse({
+        ...req.body,
+        habitId,
+        userId,
+        previousStreak: habit.currentStreak,
+      });
+      
+      // Create the break record
+      const breakRecord = await storage.createHabitBreak(breakData);
+      
+      // Update habit streak and stats
+      await storage.updateHabitAfterBreak(habitId, userId, habit.currentStreak);
+      
+      res.json(breakRecord);
+    } catch (error) {
+      console.error("Error creating habit break:", error);
+      res.status(400).json({ message: "Failed to create habit break" });
+    }
+  });
+
+  app.get('/api/habits/:habitId/breaks', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const habitId = parseInt(req.params.habitId);
+      const breaks = await storage.getHabitBreaks(habitId, userId);
+      res.json(breaks);
+    } catch (error) {
+      console.error("Error fetching habit breaks:", error);
+      res.status(500).json({ message: "Failed to fetch habit breaks" });
     }
   });
 
