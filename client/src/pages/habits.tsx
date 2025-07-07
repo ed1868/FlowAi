@@ -26,6 +26,8 @@ interface Habit {
   currentStreak: number;
   goalMeaning?: string;
   goalFeeling?: string;
+  progress?: string;
+  isCompleted?: boolean;
   isActive: boolean;
   createdAt: string;
 }

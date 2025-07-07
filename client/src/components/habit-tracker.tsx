@@ -19,6 +19,8 @@ interface Habit {
   currentStreak: number;
   goalMeaning?: string;
   goalFeeling?: string;
+  progress?: string;
+  isCompleted?: boolean;
   isActive: boolean;
   createdAt: string;
 }
@@ -55,39 +57,6 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
   const { data: todayEntries = [], error: entriesError } = useQuery<HabitEntry[]>({
     queryKey: ["/api/habits/today"],
     enabled: isAuthenticated,
-    queryFn: async () => {
-      // Since we don't have a specific endpoint for today's entries,
-      // we'll fetch all entries and filter on the client side
-      const response = await fetch("/api/habits", { credentials: "include" });
-      if (!response.ok) throw new Error("Failed to fetch habits");
-      
-      const allHabits = await response.json();
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get entries for each habit for today
-      const allEntries: HabitEntry[] = [];
-      
-      for (const habit of allHabits) {
-        try {
-          const entriesResponse = await fetch(`/api/habits/${habit.id}/entries`, { 
-            credentials: "include" 
-          });
-          if (entriesResponse.ok) {
-            const entries = await entriesResponse.json();
-            const todayEntry = entries.find((entry: HabitEntry) => 
-              entry.date.split('T')[0] === today
-            );
-            if (todayEntry) {
-              allEntries.push(todayEntry);
-            }
-          }
-        } catch (error) {
-          console.error(`Failed to fetch entries for habit ${habit.id}:`, error);
-        }
-      }
-      
-      return allEntries;
-    },
   });
 
   // Handle unauthorized errors
@@ -173,7 +142,18 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
   };
 
   const getHabitProgress = (habit: Habit) => {
-    // Use actual currentStreak from the database
+    // Use automated progress calculation from backend
+    if (habit.progress) {
+      // Parse the automated progress string like "1/20 weeks" or "5/30 days"
+      const parts = habit.progress.split(' ');
+      if (parts.length >= 2) {
+        const [current, total] = parts[0].split('/').map(Number);
+        const type = parts[1];
+        return { current, total, type };
+      }
+    }
+    
+    // Fallback to manual calculation if no automated progress available
     const current = habit.currentStreak || 0;
     const total = habit.durationValue || 30;
     const type = habit.durationType || "days";

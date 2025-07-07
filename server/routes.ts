@@ -640,6 +640,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get today's habit entries for all habits
+  app.get('/api/habits/today', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const entries = await storage.getTodayHabitEntries(userId);
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching today's habit entries:", error);
+      res.status(500).json({ message: "Failed to fetch today's habit entries" });
+    }
+  });
+
   // Habit Struggles API
   app.post('/api/habits/:habitId/struggles', isAuthenticated, async (req: any, res) => {
     try {

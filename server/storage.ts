@@ -283,11 +283,109 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserHabits(userId: string): Promise<Habit[]> {
-    return await db
+    const userHabits = await db
       .select()
       .from(habits)
       .where(and(eq(habits.userId, userId), eq(habits.isActive, true)))
       .orderBy(desc(habits.createdAt));
+    
+    // Calculate progress for each habit
+    const habitsWithProgress = await Promise.all(
+      userHabits.map(async (habit) => {
+        const entries = await this.getHabitEntries(habit.id, userId);
+        const progress = this.calculateHabitProgress(habit, entries);
+        const currentStreak = this.calculateCurrentStreak(entries);
+        
+        return {
+          ...habit,
+          currentStreak,
+          progress: progress.progressText,
+          isCompleted: progress.isCompleted
+        };
+      })
+    );
+    
+    return habitsWithProgress;
+  }
+
+  // Helper method to calculate habit progress
+  private calculateHabitProgress(habit: Habit, entries: HabitEntry[]): {
+    currentPeriod: number;
+    totalPeriods: number;
+    progressText: string;
+    isCompleted: boolean;
+  } {
+    const createdAt = new Date(habit.createdAt);
+    const now = new Date();
+    const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    
+    let currentPeriod = 0;
+    let totalPeriods = habit.durationValue;
+    let progressText = "";
+    
+    switch (habit.durationType) {
+      case "days":
+        currentPeriod = Math.min(daysSinceCreation + 1, totalPeriods);
+        progressText = `${currentPeriod}/${totalPeriods} days`;
+        break;
+      case "weeks":
+        currentPeriod = Math.min(Math.floor(daysSinceCreation / 7) + 1, totalPeriods);
+        progressText = `${currentPeriod}/${totalPeriods} weeks`;
+        break;
+      case "months":
+        const monthsDiff = (now.getFullYear() - createdAt.getFullYear()) * 12 + (now.getMonth() - createdAt.getMonth());
+        currentPeriod = Math.min(monthsDiff + 1, totalPeriods);
+        progressText = `${currentPeriod}/${totalPeriods} months`;
+        break;
+      default:
+        currentPeriod = daysSinceCreation + 1;
+        progressText = `${currentPeriod}/${totalPeriods} days`;
+    }
+    
+    return {
+      currentPeriod,
+      totalPeriods,
+      progressText,
+      isCompleted: currentPeriod >= totalPeriods
+    };
+  }
+
+  // Helper method to calculate current streak
+  private calculateCurrentStreak(entries: HabitEntry[]): number {
+    if (entries.length === 0) return 0;
+    
+    // Sort entries by date descending
+    const sortedEntries = entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    let streak = 0;
+    let currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    
+    for (const entry of sortedEntries) {
+      const entryDate = new Date(entry.date);
+      entryDate.setHours(0, 0, 0, 0);
+      
+      if (entry.completed) {
+        if (entryDate.getTime() === currentDate.getTime()) {
+          streak++;
+          currentDate.setDate(currentDate.getDate() - 1);
+        } else if (entryDate.getTime() < currentDate.getTime()) {
+          // Check if this is the next expected date
+          const expectedDate = new Date(currentDate);
+          expectedDate.setDate(expectedDate.getDate() - 1);
+          if (entryDate.getTime() === expectedDate.getTime()) {
+            streak++;
+            currentDate = expectedDate;
+          } else {
+            break; // Gap in streak
+          }
+        }
+      } else {
+        break; // Non-completed entry breaks streak
+      }
+    }
+    
+    return streak;
   }
 
   // Habit entry operations
@@ -296,7 +394,33 @@ export class DatabaseStorage implements IStorage {
       .insert(habitEntries)
       .values(entry)
       .returning();
+    
+    // Update habit streak after creating entry
+    if (entry.completed) {
+      await this.updateHabitStreak(entry.habitId, entry.userId);
+    }
+    
     return newEntry;
+  }
+
+  // Update habit streak automatically
+  private async updateHabitStreak(habitId: number, userId: string): Promise<void> {
+    const entries = await this.getHabitEntries(habitId, userId);
+    const currentStreak = this.calculateCurrentStreak(entries);
+    
+    // Get current habit to check best streak
+    const habit = await this.getHabit(habitId, userId);
+    if (habit) {
+      const bestStreak = Math.max(habit.bestStreak, currentStreak);
+      
+      await db
+        .update(habits)
+        .set({ 
+          currentStreak, 
+          bestStreak 
+        })
+        .where(and(eq(habits.id, habitId), eq(habits.userId, userId)));
+    }
   }
 
   async getHabitEntries(habitId: number, userId: string): Promise<HabitEntry[]> {
@@ -308,10 +432,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTodayHabitEntries(userId: string): Promise<HabitEntry[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
 
     return await db
       .select()
@@ -319,8 +440,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(habitEntries.userId, userId),
-          gte(habitEntries.date, today),
-          lte(habitEntries.date, tomorrow)
+          eq(habitEntries.date, today)
         )
       );
   }
@@ -361,6 +481,33 @@ export class DatabaseStorage implements IStorage {
 
   // Habit break operations
   async createHabitBreak(habitBreak: InsertHabitBreak): Promise<HabitBreak> {
+    // Get the current habit to save the streak
+    const habit = await this.getHabit(habitBreak.habitId, habitBreak.userId);
+    if (habit) {
+      const breakData = {
+        ...habitBreak,
+        previousStreak: habit.currentStreak
+      };
+      
+      // Create the break record
+      const [newBreak] = await db
+        .insert(habitBreaks)
+        .values(breakData)
+        .returning();
+      
+      // Reset the current streak and increment total breaks
+      await db
+        .update(habits)
+        .set({ 
+          currentStreak: 0,
+          totalBreaks: habit.totalBreaks + 1
+        })
+        .where(and(eq(habits.id, habitBreak.habitId), eq(habits.userId, habitBreak.userId)));
+      
+      return newBreak;
+    }
+    
+    // Fallback if habit not found
     const [newBreak] = await db
       .insert(habitBreaks)
       .values(habitBreak)
