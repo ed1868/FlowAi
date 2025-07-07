@@ -25,6 +25,18 @@ interface Habit {
   createdAt: string;
 }
 
+interface HabitStruggle {
+  id: number;
+  habitId: number;
+  userId: string;
+  note: string;
+  intensity: number;
+  triggers?: string;
+  location?: string;
+  mood?: string;
+  createdAt: string;
+}
+
 interface ResetRitual {
   id: number;
   name: string;
@@ -62,6 +74,8 @@ export default function Habits() {
   const [activeTab, setActiveTab] = useState<"habits" | "rituals">("habits");
   const [isHabitDialogOpen, setIsHabitDialogOpen] = useState(false);
   const [isRitualDialogOpen, setIsRitualDialogOpen] = useState(false);
+  const [isStruggleDialogOpen, setIsStruggleDialogOpen] = useState(false);
+  const [selectedHabitId, setSelectedHabitId] = useState<number | null>(null);
   
   // Habit form state
   const [habitForm, setHabitForm] = useState({
@@ -80,6 +94,15 @@ export default function Habits() {
     icon: "fas fa-spa",
     duration: 5,
     category: "wellness",
+  });
+
+  // Struggle form state
+  const [struggleForm, setStruggleForm] = useState({
+    note: "",
+    intensity: 5,
+    triggers: "",
+    location: "",
+    mood: "",
   });
 
   // Get habits
@@ -229,6 +252,41 @@ export default function Habits() {
     },
   });
 
+  // Create struggle mutation
+  const createStruggleMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", `/api/habits/${selectedHabitId}/struggles`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Struggle logged",
+        description: "Your hard moment has been recorded. You can do this!",
+      });
+      setIsStruggleDialogOpen(false);
+      resetStruggleForm();
+      queryClient.invalidateQueries({ queryKey: ["/api/habits", selectedHabitId, "struggles"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to log struggle",
+        variant: "destructive",
+      });
+    },
+  });
+
   const resetHabitForm = () => {
     setHabitForm({
       name: "",
@@ -247,6 +305,16 @@ export default function Habits() {
       icon: "fas fa-spa",
       duration: 5,
       category: "wellness",
+    });
+  };
+
+  const resetStruggleForm = () => {
+    setStruggleForm({
+      note: "",
+      intensity: 5,
+      triggers: "",
+      location: "",
+      mood: "",
     });
   };
 
@@ -286,6 +354,24 @@ export default function Habits() {
 
   const addDefaultRitual = (defaultRitual: any) => {
     createRitualMutation.mutate(defaultRitual);
+  };
+
+  const handleCreateStruggle = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!struggleForm.note.trim()) {
+      toast({
+        title: "Note Required",
+        description: "Please describe what you're going through",
+        variant: "destructive",
+      });
+      return;
+    }
+    createStruggleMutation.mutate(struggleForm);
+  };
+
+  const openStruggleDialog = (habitId: number) => {
+    setSelectedHabitId(habitId);
+    setIsStruggleDialogOpen(true);
   };
 
   if (authLoading || habitsLoading || ritualsLoading) {
@@ -420,7 +506,7 @@ export default function Habits() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                <HabitTracker />
+                <HabitTracker onStruggleClick={openStruggleDialog} />
               </CardContent>
             </Card>
 
@@ -614,6 +700,104 @@ export default function Habits() {
           </div>
         )}
       </div>
+
+      {/* Struggle Dialog */}
+      <Dialog open={isStruggleDialogOpen} onOpenChange={setIsStruggleDialogOpen}>
+        <DialogContent className="glass-card border-none max-w-md">
+          <DialogHeader>
+            <DialogTitle className="gradient-text">Log Hard Moment</DialogTitle>
+            <p className="text-text-secondary text-sm">
+              Record what you're going through right now. This helps identify patterns and triggers.
+            </p>
+          </DialogHeader>
+          <form onSubmit={handleCreateStruggle} className="space-y-4">
+            <div>
+              <Textarea
+                placeholder="What's going on right now? (e.g., 'really feel like smoking a cig right now at 3:17')"
+                value={struggleForm.note}
+                onChange={(e) => setStruggleForm(prev => ({ ...prev, note: e.target.value }))}
+                className="glass-button border-none focus:ring-2 focus:ring-orange-400"
+                rows={4}
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-text-secondary block mb-2">Intensity (1-10)</label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={struggleForm.intensity}
+                  onChange={(e) => setStruggleForm(prev => ({ ...prev, intensity: parseInt(e.target.value) }))}
+                  className="glass-button border-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-text-secondary block mb-2">Current mood</label>
+                <Select value={struggleForm.mood} onValueChange={(value) => setStruggleForm(prev => ({ ...prev, mood: value }))}>
+                  <SelectTrigger className="glass-button border-none">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="stressed">Stressed</SelectItem>
+                    <SelectItem value="anxious">Anxious</SelectItem>
+                    <SelectItem value="bored">Bored</SelectItem>
+                    <SelectItem value="frustrated">Frustrated</SelectItem>
+                    <SelectItem value="sad">Sad</SelectItem>
+                    <SelectItem value="angry">Angry</SelectItem>
+                    <SelectItem value="lonely">Lonely</SelectItem>
+                    <SelectItem value="tired">Tired</SelectItem>
+                    <SelectItem value="overwhelmed">Overwhelmed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm text-text-secondary block mb-2">Location (optional)</label>
+              <Input
+                placeholder="Where are you? (e.g., office, home, car)"
+                value={struggleForm.location}
+                onChange={(e) => setStruggleForm(prev => ({ ...prev, location: e.target.value }))}
+                className="glass-button border-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-text-secondary block mb-2">Triggers (optional)</label>
+              <Input
+                placeholder="What might have triggered this? (e.g., work stress, argument)"
+                value={struggleForm.triggers}
+                onChange={(e) => setStruggleForm(prev => ({ ...prev, triggers: e.target.value }))}
+                className="glass-button border-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+
+            <div className="flex space-x-3 pt-4">
+              <Button
+                type="submit"
+                disabled={createStruggleMutation.isPending}
+                className="flex-1 bg-orange-400 hover:bg-orange-500 text-white"
+              >
+                {createStruggleMutation.isPending ? "Logging..." : "Log Struggle"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsStruggleDialogOpen(false);
+                  resetStruggleForm();
+                }}
+                className="flex-1 glass-button border-glass text-text-secondary hover:text-text-primary"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

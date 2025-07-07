@@ -5,6 +5,7 @@ import {
   voiceNotes,
   habits,
   habitEntries,
+  habitStruggles,
   resetRituals,
   resetCompletions,
   userPreferences,
@@ -23,6 +24,8 @@ import {
   type InsertHabit,
   type HabitEntry,
   type InsertHabitEntry,
+  type HabitStruggle,
+  type InsertHabitStruggle,
   type ResetRitual,
   type InsertResetRitual,
   type ResetCompletion,
@@ -68,6 +71,11 @@ export interface IStorage {
   createHabitEntry(entry: InsertHabitEntry): Promise<HabitEntry>;
   getHabitEntries(habitId: number, userId: string): Promise<HabitEntry[]>;
   getTodayHabitEntries(userId: string): Promise<HabitEntry[]>;
+  
+  // Habit struggle operations
+  createHabitStruggle(struggle: InsertHabitStruggle): Promise<HabitStruggle>;
+  getHabitStruggles(habitId: number, userId: string): Promise<HabitStruggle[]>;
+  deleteHabitStruggle(struggleId: number, userId: string): Promise<boolean>;
   
   // Reset ritual operations
   createResetRitual(ritual: InsertResetRitual): Promise<ResetRitual>;
@@ -298,6 +306,40 @@ export class DatabaseStorage implements IStorage {
           lte(habitEntries.date, tomorrow)
         )
       );
+  }
+
+  // Habit struggle operations
+  async createHabitStruggle(struggle: InsertHabitStruggle): Promise<HabitStruggle> {
+    const [newStruggle] = await db
+      .insert(habitStruggles)
+      .values(struggle)
+      .returning();
+    return newStruggle;
+  }
+
+  async getHabitStruggles(habitId: number, userId: string): Promise<HabitStruggle[]> {
+    return await db
+      .select()
+      .from(habitStruggles)
+      .where(
+        and(
+          eq(habitStruggles.habitId, habitId),
+          eq(habitStruggles.userId, userId)
+        )
+      )
+      .orderBy(desc(habitStruggles.createdAt));
+  }
+
+  async deleteHabitStruggle(struggleId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(habitStruggles)
+      .where(
+        and(
+          eq(habitStruggles.id, struggleId),
+          eq(habitStruggles.userId, userId)
+        )
+      );
+    return result.rowCount > 0;
   }
 
   // Reset ritual operations

@@ -31,9 +31,10 @@ interface HabitEntry {
 
 interface HabitTrackerProps {
   simplified?: boolean;
+  onStruggleClick?: (habitId: number) => void;
 }
 
-export default function HabitTracker({ simplified = false }: HabitTrackerProps) {
+export default function HabitTracker({ simplified = false, onStruggleClick }: HabitTrackerProps) {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -252,6 +253,18 @@ export default function HabitTracker({ simplified = false }: HabitTrackerProps) 
                   </div>
                   <div className="text-xs text-text-tertiary">days</div>
                 </div>
+                
+                {onStruggleClick && (
+                  <Button
+                    onClick={() => onStruggleClick(habit.id)}
+                    variant="ghost"
+                    size="sm"
+                    className="w-10 h-10 rounded-full border-2 border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-white"
+                    title="Log hard moment"
+                  >
+                    <i className="fas fa-exclamation text-sm"></i>
+                  </Button>
+                )}
                 
                 <Button
                   onClick={() => toggleHabit(habit)}

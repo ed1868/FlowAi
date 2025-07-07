@@ -120,6 +120,19 @@ export const habitEntries = pgTable("habit_entries", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Habit struggles table (hard moments/craving logs)
+export const habitStruggles = pgTable("habit_struggles", {
+  id: serial("id").primaryKey(),
+  habitId: integer("habit_id").notNull().references(() => habits.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  note: text("note").notNull(),
+  intensity: integer("intensity").default(5), // 1-10 scale
+  triggers: text("triggers"), // comma-separated triggers
+  location: varchar("location"),
+  mood: varchar("mood"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Reset kit rituals table
 export const resetRituals = pgTable("reset_rituals", {
   id: serial("id").primaryKey(),
@@ -211,6 +224,11 @@ export const insertUserVoiceCloneSchema = createInsertSchema(userVoiceClones).om
   updatedAt: true,
 });
 
+export const insertHabitStruggleSchema = createInsertSchema(habitStruggles).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -232,3 +250,5 @@ export type UserPreferences = typeof userPreferences.$inferSelect;
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type UserVoiceClone = typeof userVoiceClones.$inferSelect;
 export type InsertUserVoiceClone = z.infer<typeof insertUserVoiceCloneSchema>;
+export type HabitStruggle = typeof habitStruggles.$inferSelect;
+export type InsertHabitStruggle = z.infer<typeof insertHabitStruggleSchema>;

@@ -19,6 +19,7 @@ import {
   insertVoiceNoteSchema,
   insertHabitSchema,
   insertHabitEntrySchema,
+  insertHabitStruggleSchema,
   insertResetRitualSchema,
   insertResetCompletionSchema,
   insertUserPreferencesSchema,
@@ -635,6 +636,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching habit entries:", error);
       res.status(500).json({ message: "Failed to fetch habit entries" });
+    }
+  });
+
+  // Habit Struggles API
+  app.post('/api/habits/:habitId/struggles', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const habitId = parseInt(req.params.habitId);
+      const struggleData = insertHabitStruggleSchema.parse({
+        ...req.body,
+        habitId,
+        userId,
+      });
+      const struggle = await storage.createHabitStruggle(struggleData);
+      res.json(struggle);
+    } catch (error) {
+      console.error("Error creating habit struggle:", error);
+      res.status(400).json({ message: "Failed to create habit struggle" });
+    }
+  });
+
+  app.get('/api/habits/:habitId/struggles', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const habitId = parseInt(req.params.habitId);
+      const struggles = await storage.getHabitStruggles(habitId, userId);
+      res.json(struggles);
+    } catch (error) {
+      console.error("Error fetching habit struggles:", error);
+      res.status(500).json({ message: "Failed to fetch habit struggles" });
+    }
+  });
+
+  app.delete('/api/struggles/:struggleId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const struggleId = parseInt(req.params.struggleId);
+      const success = await storage.deleteHabitStruggle(struggleId, userId);
+      if (!success) {
+        return res.status(404).json({ message: "Struggle not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting habit struggle:", error);
+      res.status(400).json({ message: "Failed to delete habit struggle" });
     }
   });
 
