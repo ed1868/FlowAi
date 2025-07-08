@@ -126,6 +126,67 @@ export default function Habits() {
     mood: "",
   });
 
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+
+  // Get current location function
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Location not supported",
+        description: "Your browser doesn't support geolocation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          
+          // Use reverse geocoding to get address
+          const response = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const location = data.city ? `${data.city}, ${data.countryName}` : `${data.locality || 'Unknown'}, ${data.countryName}`;
+            
+            setStruggleForm(prev => ({
+              ...prev,
+              location
+            }));
+          } else {
+            // Fallback to coordinates
+            setStruggleForm(prev => ({
+              ...prev,
+              location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            }));
+          }
+        } catch (error) {
+          // Fallback to coordinates
+          const { latitude, longitude } = position.coords;
+          setStruggleForm(prev => ({
+            ...prev,
+            location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+          }));
+        } finally {
+          setIsGettingLocation(false);
+        }
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        toast({
+          title: "Location access denied",
+          description: "Please enable location access or enter manually",
+          variant: "destructive",
+        });
+      }
+    );
+  };
+
   // Get habits
   const { data: habits = [], isLoading: habitsLoading, error: habitsError } = useQuery<Habit[]>({
     queryKey: ["/api/habits"],
@@ -991,12 +1052,29 @@ export default function Habits() {
 
             <div>
               <label className="text-sm text-text-secondary block mb-2">Location (optional)</label>
-              <Input
-                placeholder="Where are you? (e.g., office, home, car)"
-                value={struggleForm.location}
-                onChange={(e) => setStruggleForm(prev => ({ ...prev, location: e.target.value }))}
-                className="glass-button border-none focus:ring-2 focus:ring-orange-400"
-              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Where are you? (e.g., office, home, car)"
+                  value={struggleForm.location}
+                  onChange={(e) => setStruggleForm(prev => ({ ...prev, location: e.target.value }))}
+                  className="glass-button border-none focus:ring-2 focus:ring-orange-400 flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  disabled={isGettingLocation}
+                  variant="ghost"
+                  size="sm"
+                  className="px-3 py-2 glass-button text-apple-blue hover:text-apple-blue/80 hover:bg-apple-blue/10 border-none"
+                  title="Get current location"
+                >
+                  {isGettingLocation ? (
+                    <i className="fas fa-spinner fa-spin"></i>
+                  ) : (
+                    <i className="fas fa-location-crosshairs"></i>
+                  )}
+                </Button>
+              </div>
             </div>
 
             <div>
@@ -1117,7 +1195,7 @@ export default function Habits() {
 
       {/* Habit Details Dialog */}
       <Dialog open={isHabitDetailsOpen} onOpenChange={setIsHabitDetailsOpen}>
-        <DialogContent className="glass-card rounded-2xl border-white/10 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-card rounded-2xl border-white/10 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" aria-describedby="habit-details-description">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -1152,6 +1230,9 @@ export default function Habits() {
               </Button>
             </div>
           </DialogHeader>
+          <div id="habit-details-description" className="sr-only">
+            View and edit habit details, including struggle history and settings
+          </div>
 
           <div className="space-y-6">
             {isEditMode ? (

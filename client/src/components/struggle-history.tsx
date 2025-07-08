@@ -45,47 +45,68 @@ export default function StruggleHistory({ habitId }: StruggleHistoryProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {struggles.map((struggle: HabitStruggle) => (
-        <div key={struggle.id} className="glass-button rounded-lg p-4">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center space-x-2">
+        <div key={struggle.id} className="glass-button rounded-lg p-4 space-y-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-1">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <i
                     key={i}
-                    className={`fas fa-circle text-xs ${
+                    className={`fas fa-circle text-sm ${
                       i < struggle.intensity ? "text-red-400" : "text-gray-600"
                     }`}
                   />
                 ))}
               </div>
-              <span className="text-xs text-text-secondary">
+              <span className="text-sm text-text-secondary font-medium">
                 Intensity: {struggle.intensity}/5
               </span>
             </div>
-            <div className="text-xs text-text-tertiary">
-              {new Date(struggle.createdAt).toLocaleDateString()}
+            <div className="text-sm text-text-tertiary">
+              {new Date(struggle.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
             </div>
           </div>
           
-          <p className="text-sm mb-3">{struggle.note}</p>
+          <div className="bg-white/5 rounded-lg p-3">
+            <div className="text-sm text-text-secondary mb-1 font-medium">What happened:</div>
+            <p className="text-sm leading-relaxed">{struggle.note}</p>
+          </div>
           
           {(struggle.triggers || struggle.location || struggle.mood) && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-1 gap-3">
               {struggle.triggers && (
-                <div className="glass-input p-2 rounded">
-                  <span className="text-text-secondary">Triggers:</span> {struggle.triggers}
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3">
+                  <div className="flex items-center mb-1">
+                    <i className="fas fa-bolt text-orange-400 mr-2"></i>
+                    <span className="text-sm font-medium text-orange-300">Triggers</span>
+                  </div>
+                  <p className="text-sm text-text-primary">{struggle.triggers}</p>
                 </div>
               )}
               {struggle.location && (
-                <div className="glass-input p-2 rounded">
-                  <span className="text-text-secondary">Location:</span> {struggle.location}
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                  <div className="flex items-center mb-1">
+                    <i className="fas fa-map-marker-alt text-blue-400 mr-2"></i>
+                    <span className="text-sm font-medium text-blue-300">Location</span>
+                  </div>
+                  <p className="text-sm text-text-primary">{struggle.location}</p>
                 </div>
               )}
               {struggle.mood && (
-                <div className="glass-input p-2 rounded">
-                  <span className="text-text-secondary">Mood:</span> {struggle.mood}
+                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                  <div className="flex items-center mb-1">
+                    <i className="fas fa-heart text-purple-400 mr-2"></i>
+                    <span className="text-sm font-medium text-purple-300">Mood</span>
+                  </div>
+                  <p className="text-sm text-text-primary">{struggle.mood}</p>
                 </div>
               )}
             </div>
