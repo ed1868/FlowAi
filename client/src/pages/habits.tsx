@@ -1244,93 +1244,125 @@ export default function Habits() {
 
           <div className="space-y-6">
             {isEditMode ? (
-              <form onSubmit={handleUpdateHabit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Habit Name</label>
-                    <input
-                      type="text"
-                      value={editHabitForm.name}
-                      onChange={(e) => setEditHabitForm({...editHabitForm, name: e.target.value})}
-                      className="w-full glass-input rounded-lg p-3"
-                      placeholder="Enter habit name"
-                      required
-                    />
+              <form onSubmit={handleUpdateHabit} className="space-y-6">
+                {/* Basic Information Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                    <i className="fas fa-info-circle text-apple-blue"></i>
+                    <h3 className="text-lg font-semibold text-text-primary">Basic Information</h3>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Frequency</label>
-                    <select
-                      value={editHabitForm.frequency}
-                      onChange={(e) => setEditHabitForm({...editHabitForm, frequency: e.target.value})}
-                      className="w-full glass-input rounded-lg p-3"
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Description</label>
-                  <textarea
-                    value={editHabitForm.description}
-                    onChange={(e) => setEditHabitForm({...editHabitForm, description: e.target.value})}
-                    className="w-full glass-input rounded-lg p-3 h-20"
-                    placeholder="Describe your habit..."
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Duration</label>
-                    <div className="flex gap-2">
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-text-secondary">Habit Name</label>
                       <input
-                        type="number"
-                        value={editHabitForm.durationValue}
-                        onChange={(e) => setEditHabitForm({...editHabitForm, durationValue: parseInt(e.target.value)})}
-                        className="flex-1 glass-input rounded-lg p-3"
-                        min="1"
+                        type="text"
+                        value={editHabitForm.name}
+                        onChange={(e) => setEditHabitForm({...editHabitForm, name: e.target.value})}
+                        className="w-full glass-input rounded-lg p-3 h-12 text-sm focus:ring-2 focus:ring-apple-blue transition-all"
+                        placeholder="Enter habit name"
                         required
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-text-secondary">Frequency</label>
                       <select
-                        value={editHabitForm.durationType}
-                        onChange={(e) => setEditHabitForm({...editHabitForm, durationType: e.target.value})}
-                        className="glass-input rounded-lg p-3"
+                        value={editHabitForm.frequency}
+                        onChange={(e) => setEditHabitForm({...editHabitForm, frequency: e.target.value})}
+                        className="w-full glass-input rounded-lg p-3 h-12 text-sm focus:ring-2 focus:ring-apple-blue transition-all"
                       >
-                        <option value="days">Days</option>
-                        <option value="weeks">Weeks</option>
-                        <option value="months">Months</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
                       </select>
                     </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Target Count</label>
-                    <input
-                      type="number"
-                      value={editHabitForm.targetCount}
-                      onChange={(e) => setEditHabitForm({...editHabitForm, targetCount: parseInt(e.target.value)})}
-                      className="w-full glass-input rounded-lg p-3"
-                      min="1"
-                      required
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-text-secondary">Description</label>
+                    <textarea
+                      value={editHabitForm.description}
+                      onChange={(e) => setEditHabitForm({...editHabitForm, description: e.target.value})}
+                      className="w-full glass-input rounded-lg p-3 h-24 text-sm resize-none focus:ring-2 focus:ring-apple-blue transition-all"
+                      placeholder="Describe your habit and why it matters to you..."
                     />
                   </div>
                 </div>
 
-                <div className="flex gap-3">
+                {/* Duration & Goals Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                    <i className="fas fa-target text-apple-blue"></i>
+                    <h3 className="text-lg font-semibold text-text-primary">Duration & Goals</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-text-secondary">Duration Goal</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={editHabitForm.durationValue}
+                          onChange={(e) => setEditHabitForm({...editHabitForm, durationValue: parseInt(e.target.value)})}
+                          className="flex-1 glass-input rounded-lg p-3 h-12 text-sm focus:ring-2 focus:ring-apple-blue transition-all"
+                          min="1"
+                          placeholder="30"
+                          required
+                        />
+                        <select
+                          value={editHabitForm.durationType}
+                          onChange={(e) => setEditHabitForm({...editHabitForm, durationType: e.target.value})}
+                          className="glass-input rounded-lg p-3 h-12 text-sm focus:ring-2 focus:ring-apple-blue transition-all w-24"
+                        >
+                          <option value="days">Days</option>
+                          <option value="weeks">Weeks</option>
+                          <option value="months">Months</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-text-secondary">Daily Target</label>
+                      <input
+                        type="number"
+                        value={editHabitForm.targetCount}
+                        onChange={(e) => setEditHabitForm({...editHabitForm, targetCount: parseInt(e.target.value)})}
+                        className="w-full glass-input rounded-lg p-3 h-12 text-sm focus:ring-2 focus:ring-apple-blue transition-all"
+                        min="1"
+                        placeholder="1"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
                   <Button 
                     type="submit" 
-                    className="flex-1 bg-apple-blue hover:bg-apple-blue/90"
+                    className="flex-1 bg-apple-blue hover:bg-apple-blue/90 text-white h-12 font-medium transition-all"
                     disabled={updateHabitMutation.isPending}
                   >
-                    {updateHabitMutation.isPending ? "Updating..." : "Update Habit"}
+                    {updateHabitMutation.isPending ? (
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-spinner fa-spin"></i>
+                        Updating...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-save"></i>
+                        Update Habit
+                      </div>
+                    )}
                   </Button>
                   <Button 
                     type="button"
                     onClick={() => setIsEditMode(false)}
                     variant="ghost"
-                    className="px-6"
+                    className="flex-1 sm:flex-none sm:w-auto text-text-secondary hover:text-text-primary hover:bg-white/5 h-12 transition-all"
                   >
-                    Cancel
+                    <div className="flex items-center gap-2">
+                      <i className="fas fa-times"></i>
+                      Cancel
+                    </div>
                   </Button>
                 </div>
               </form>
