@@ -465,61 +465,62 @@ export default function Habits() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-1 text-text-primary pt-20 pb-8">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4 gradient-text">Habits & Rituals</h1>
-          <p className="text-xl text-text-secondary">
+    <div className="min-h-screen bg-dark-1 text-text-primary pt-16 md:pt-20 pb-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-6 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 md:mb-4 gradient-text">Habits & Rituals</h1>
+          <p className="text-base sm:text-lg md:text-xl text-text-secondary px-4">
             Build lasting habits and create mindful reset rituals
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="glass-card rounded-2xl p-1 flex">
+        <div className="flex justify-center mb-6 md:mb-8">
+          <div className="glass-card rounded-2xl p-1 flex w-full max-w-xs sm:max-w-sm">
             <Button
               variant="ghost"
               onClick={() => setActiveTab("habits")}
-              className={`px-6 py-2 rounded-xl transition-colors ${
+              className={`flex-1 px-3 sm:px-6 py-2 rounded-xl transition-colors text-sm sm:text-base ${
                 activeTab === "habits"
                   ? "bg-apple-blue text-white"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
-              <i className="fas fa-chart-line mr-2"></i>
-              Habits
+              <i className="fas fa-chart-line mr-1 sm:mr-2"></i>
+              <span>Habits</span>
             </Button>
             <Button
               variant="ghost"
               onClick={() => setActiveTab("rituals")}
-              className={`px-6 py-2 rounded-xl transition-colors ${
+              className={`flex-1 px-3 sm:px-6 py-2 rounded-xl transition-colors text-sm sm:text-base ${
                 activeTab === "rituals"
                   ? "bg-apple-blue text-white"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
-              <i className="fas fa-spa mr-2"></i>
-              Reset Rituals
+              <i className="fas fa-spa mr-1 sm:mr-2"></i>
+              <span className="hidden sm:inline">Reset Rituals</span>
+              <span className="sm:hidden">Rituals</span>
             </Button>
           </div>
         </div>
 
         {activeTab === "habits" ? (
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
             {/* Today's Habits */}
             <Card className="glass-card rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="text-lg font-semibold">Today's Habits</CardTitle>
                 <Dialog open={isHabitDialogOpen} onOpenChange={setIsHabitDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-apple-blue hover:bg-apple-blue/80 text-white">
+                    <Button className="bg-apple-blue hover:bg-apple-blue/80 text-white w-full sm:w-auto">
                       <i className="fas fa-plus mr-2"></i>
                       Add Habit
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="glass-card border-none">
+                  <DialogContent className="glass-card border-none max-w-md mx-auto max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle className="gradient-text">Create New Habit</DialogTitle>
+                      <DialogTitle className="gradient-text text-center">Create New Habit</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleCreateHabit} className="space-y-4">
                       <div>
@@ -539,8 +540,9 @@ export default function Habits() {
                           rows={3}
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
+                          <label className="text-xs text-text-secondary mb-1 block">Frequency</label>
                           <Select value={habitForm.frequency} onValueChange={(value) => setHabitForm(prev => ({ ...prev, frequency: value }))}>
                             <SelectTrigger className="glass-button border-none">
                               <SelectValue />
@@ -552,9 +554,10 @@ export default function Habits() {
                           </Select>
                         </div>
                         <div>
+                          <label className="text-xs text-text-secondary mb-1 block">Target count</label>
                           <Input
                             type="number"
-                            placeholder="Target count"
+                            placeholder="1"
                             value={habitForm.targetCount}
                             onChange={(e) => setHabitForm(prev => ({ ...prev, targetCount: parseInt(e.target.value) || 1 }))}
                             className="glass-button border-none focus:ring-2 focus:ring-apple-blue"
@@ -566,7 +569,7 @@ export default function Habits() {
                       {/* Duration Selection */}
                       <div>
                         <label className="text-sm text-text-secondary block mb-2">Habit Duration Goal</label>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <Input
                               type="number"
@@ -654,25 +657,25 @@ export default function Habits() {
                   <CardTitle className="text-lg font-semibold">Popular Habits</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                     {defaultHabits.map((habit, index) => (
                       <Button
                         key={index}
                         variant="ghost"
                         onClick={() => addDefaultHabit(habit)}
-                        className="glass-button p-4 h-auto flex flex-col items-center justify-center space-y-2 hover:scale-105 transition-transform"
+                        className="glass-button p-3 sm:p-4 h-auto flex flex-col items-center justify-center space-y-2 hover:scale-105 transition-transform text-center"
                         disabled={createHabitMutation.isPending}
                       >
                         <div 
-                          className="w-12 h-12 rounded-xl flex items-center justify-center"
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center"
                           style={{ backgroundColor: habit.color + '20' }}
                         >
                           <i 
-                            className={`${habit.icon} text-xl`}
+                            className={`${habit.icon} text-lg sm:text-xl`}
                             style={{ color: habit.color }}
                           ></i>
                         </div>
-                        <span className="text-sm font-medium">{habit.name}</span>
+                        <span className="text-xs sm:text-sm font-medium line-clamp-2">{habit.name}</span>
                         <Badge variant="secondary" className="text-xs">
                           {habit.category}
                         </Badge>
@@ -684,14 +687,14 @@ export default function Habits() {
             )}
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
             {/* Reset Rituals */}
             <Card className="glass-card rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="text-lg font-semibold">Reset Rituals</CardTitle>
                 <Dialog open={isRitualDialogOpen} onOpenChange={setIsRitualDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-apple-blue hover:bg-apple-blue/80 text-white">
+                    <Button className="bg-apple-blue hover:bg-apple-blue/80 text-white w-full sm:w-auto">
                       <i className="fas fa-plus mr-2"></i>
                       Add Ritual
                     </Button>
@@ -938,15 +941,15 @@ export default function Habits() {
 
       {/* Break Habit Dialog */}
       <Dialog open={isBreakDialogOpen} onOpenChange={setIsBreakDialogOpen}>
-        <DialogContent className="glass-card border-none max-w-md">
-          <div className="text-center space-y-6">
+        <DialogContent className="glass-card border-none max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+          <div className="text-center space-y-4 sm:space-y-6">
             {/* Header with broken heart icon */}
-            <div className="space-y-3">
-              <div className="w-16 h-16 mx-auto bg-red-500/20 rounded-full flex items-center justify-center">
-                <i className="fas fa-heart-broken text-2xl text-red-400"></i>
+            <div className="space-y-2 sm:space-y-3">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-red-500/20 rounded-full flex items-center justify-center">
+                <i className="fas fa-heart-broken text-xl sm:text-2xl text-red-400"></i>
               </div>
               <DialogHeader>
-                <DialogTitle className="text-xl font-semibold text-text-primary">
+                <DialogTitle className="text-lg sm:text-xl font-semibold text-text-primary">
                   Breaking Your Habit
                 </DialogTitle>
               </DialogHeader>
@@ -987,11 +990,11 @@ export default function Habits() {
             </div>
 
             {/* Action buttons */}
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <Button
                 onClick={confirmBreakHabit}
                 disabled={createHabitBreakMutation.isPending}
-                className="w-full bg-red-500 hover:bg-red-600 text-white"
+                className="w-full bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base py-2 sm:py-3"
               >
                 {createHabitBreakMutation.isPending ? "Recording..." : "Reset & Start Fresh"}
               </Button>
@@ -1003,7 +1006,7 @@ export default function Habits() {
                   setSelectedHabitId(null);
                 }}
                 variant="ghost"
-                className="w-full text-text-secondary hover:text-text-primary"
+                className="w-full text-text-secondary hover:text-text-primary text-sm sm:text-base py-2 sm:py-3"
               >
                 Never Mind, Keep Going
               </Button>

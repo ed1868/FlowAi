@@ -40,15 +40,15 @@ export default function Navigation() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-effect">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/">
             <div className="flex items-center space-x-2 cursor-pointer">
-              <div className="w-8 h-8 bg-gradient-to-br from-apple-blue to-apple-indigo rounded-lg flex items-center justify-center">
-                <Zap className="text-white" size={16} />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-apple-blue to-apple-indigo rounded-lg flex items-center justify-center">
+                <Zap className="text-white" size={14} />
               </div>
-              <span className="text-xl font-semibold gradient-text">Flow</span>
+              <span className="text-lg sm:text-xl font-semibold gradient-text">Flow</span>
             </div>
           </Link>
           

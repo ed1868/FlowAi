@@ -48,48 +48,38 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
   const queryClient = useQueryClient();
 
   // Get user habits
-  const { data: habits = [], error: habitsError } = useQuery<Habit[]>({
+  const { data: habits = [], isLoading: habitsLoading } = useQuery({
     queryKey: ["/api/habits"],
     enabled: isAuthenticated,
   });
 
   // Get today's habit entries
-  const { data: todayEntries = [], error: entriesError } = useQuery<HabitEntry[]>({
+  const { data: todayEntries = [], isLoading: entriesLoading } = useQuery({
     queryKey: ["/api/habits/today"],
     enabled: isAuthenticated,
   });
 
-  // Handle unauthorized errors
-  useEffect(() => {
-    const handleError = (error: any) => {
-      if (error && isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-      }
-    };
-
-    handleError(habitsError);
-    handleError(entriesError);
-  }, [habitsError, entriesError, toast]);
-
   // Create habit entry mutation
   const createHabitEntryMutation = useMutation({
-    mutationFn: async ({ habitId, entryData }: { habitId: number; entryData: any }) => {
-      const response = await apiRequest("POST", `/api/habits/${habitId}/entries`, entryData);
-      return response.json();
+    mutationFn: async (habitId: number) => {
+      const today = new Date().toISOString().split('T')[0];
+      return await apiRequest("POST", "/api/habits/entries", {
+        habitId,
+        date: today,
+        completed: true,
+        count: 1,
+      });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/habits/today"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
+      toast({
+        title: "Great job!",
+        description: "Habit completed for today",
+      });
     },
     onError: (error) => {
-      if (isUnauthorizedError(error as Error)) {
+      if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -100,104 +90,73 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
         }, 500);
         return;
       }
+      console.error("Error creating habit entry:", error);
       toast({
         title: "Error",
-        description: "Failed to update habit",
+        description: "Failed to complete habit. Please try again.",
         variant: "destructive",
       });
     },
   });
 
   const toggleHabit = async (habit: Habit) => {
-    const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
-    const existingEntry = todayEntries.find(entry => entry.habitId === habit.id);
-    
-    if (existingEntry) {
-      // For simplicity, we'll create a new entry instead of updating
-      // In a real app, you'd want to implement an update endpoint
-      toast({
-        title: "Already completed",
-        description: "This habit has already been completed today",
-      });
-      return;
+    try {
+      await createHabitEntryMutation.mutateAsync(habit.id);
+    } catch (error) {
+      console.error("Failed to toggle habit:", error);
     }
-
-    createHabitEntryMutation.mutate({
-      habitId: habit.id,
-      entryData: {
-        date: today,
-        completed: true,
-        count: 1,
-      },
-    });
-
-    toast({
-      title: "Habit completed! 🎉",
-      description: `Great job completing "${habit.name}"`,
-    });
   };
 
-  const isHabitCompleted = (habitId: number) => {
-    return todayEntries.some(entry => entry.habitId === habitId && entry.completed);
+  const isHabitCompleted = (habitId: number): boolean => {
+    return todayEntries.some((entry: HabitEntry) => 
+      entry.habitId === habitId && entry.completed
+    );
   };
 
   const getHabitProgress = (habit: Habit) => {
-    // Use automated progress calculation from backend
-    if (habit.progress) {
-      // Parse the automated progress string like "1/20 weeks" or "5/30 days"
-      const parts = habit.progress.split(' ');
-      if (parts.length >= 2) {
-        const [current, total] = parts[0].split('/').map(Number);
-        const type = parts[1];
-        return { current, total, type };
-      }
+    const createdDate = new Date(habit.createdAt);
+    const today = new Date();
+    
+    if (habit.frequency === 'daily') {
+      const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const targetDays = habit.durationValue;
+      return {
+        current: Math.min(daysSinceCreated, targetDays),
+        total: targetDays,
+        type: `${targetDays > 1 ? 'days' : 'day'}`
+      };
+    } else if (habit.frequency === 'weekly') {
+      const weeksSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
+      const targetWeeks = habit.durationValue;
+      return {
+        current: Math.min(weeksSinceCreated, targetWeeks),
+        total: targetWeeks,
+        type: `${targetWeeks > 1 ? 'weeks' : 'week'}`
+      };
     }
     
-    // Fallback to manual calculation if no automated progress available
-    const current = habit.currentStreak || 0;
-    const total = habit.durationValue || 30;
-    const type = habit.durationType || "days";
-    return { current, total, type };
+    return { current: 0, total: habit.durationValue, type: 'days' };
   };
 
-  if (simplified) {
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (habitsLoading || entriesLoading) {
     return (
-      <div className="space-y-3">
-        {habits.length > 0 ? (
-          habits.slice(0, 3).map((habit) => {
-            const completed = isHabitCompleted(habit.id);
-            const progress = getHabitProgress(habit);
-            
-            return (
-              <div key={habit.id} className="flex items-center justify-between p-3 glass-button rounded-xl">
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => toggleHabit(habit)}
-                    disabled={completed || createHabitEntryMutation.isPending}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${
-                      completed
-                        ? "bg-apple-green border-apple-green text-white"
-                        : "border-apple-blue hover:border-apple-green"
-                    }`}
-                  >
-                    {completed && <i className="fas fa-check text-xs"></i>}
-                  </button>
-                  <span className={completed ? "text-text-secondary line-through" : ""}>
-                    {habit.name}
-                  </span>
-                </div>
-                <div className={`text-sm ${completed ? "text-apple-green" : "text-apple-blue"}`}>
-                  {progress.current}/{progress.total} {progress.type}
-                </div>
+      <div className="animate-pulse space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="glass-button rounded-xl p-4">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-text-tertiary/20 rounded-xl"></div>
+              <div className="flex-1">
+                <div className="h-4 bg-text-tertiary/20 rounded w-32 mb-2"></div>
+                <div className="h-3 bg-text-tertiary/20 rounded w-24"></div>
               </div>
-            );
-          })
-        ) : (
-          <div className="text-center py-4">
-            <i className="fas fa-plus-circle text-text-tertiary text-lg mb-2"></i>
-            <p className="text-text-tertiary text-sm">No habits yet</p>
+              <div className="w-10 h-10 bg-text-tertiary/20 rounded-full"></div>
+            </div>
           </div>
-        )}
+        ))}
       </div>
     );
   }
@@ -205,28 +164,28 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
   return (
     <div className="space-y-4">
       {habits.length > 0 ? (
-        habits.map((habit) => {
+        habits.map((habit: Habit) => {
           const completed = isHabitCompleted(habit.id);
           const progress = getHabitProgress(habit);
           
           return (
-            <div key={habit.id} className="flex items-center justify-between p-4 glass-button rounded-xl">
-              <div className="flex items-center space-x-4">
+            <div key={habit.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 glass-button rounded-xl gap-4">
+              <div className="flex items-center space-x-3 sm:space-x-4 flex-1">
                 <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: habit.color + '20' }}
                 >
                   <i 
-                    className={`${habit.icon} text-xl`}
+                    className={`${habit.icon} text-lg sm:text-xl`}
                     style={{ color: habit.color }}
                   ></i>
                 </div>
-                <div>
-                  <h3 className={`font-medium ${completed ? "line-through text-text-secondary" : ""}`}>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`font-medium text-sm sm:text-base truncate ${completed ? "line-through text-text-secondary" : ""}`}>
                     {habit.name}
                   </h3>
                   {habit.description && (
-                    <p className="text-sm text-text-tertiary">{habit.description}</p>
+                    <p className="text-xs sm:text-sm text-text-tertiary truncate">{habit.description}</p>
                   )}
                   <div className="text-xs text-text-tertiary mt-1">
                     {habit.frequency} • Target: {habit.targetCount}
@@ -234,7 +193,7 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
                 </div>
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-between sm:justify-end space-x-3 sm:space-x-4">
                 <div className="text-center">
                   <div className={`text-sm font-medium ${completed ? "text-apple-green" : "text-apple-blue"}`}>
                     {progress.current}/{progress.total}
@@ -242,47 +201,49 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
                   <div className="text-xs text-text-tertiary">{progress.type}</div>
                 </div>
                 
-                {onStruggleClick && (
-                  <Button
-                    onClick={() => onStruggleClick(habit.id)}
-                    variant="ghost"
-                    size="sm"
-                    className="w-10 h-10 rounded-full border-2 border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-white"
-                    title="Log hard moment"
-                  >
-                    <i className="fas fa-exclamation text-sm"></i>
-                  </Button>
-                )}
-                
-                {onBreakHabit && (
-                  <Button
-                    onClick={() => onBreakHabit(habit.id)}
-                    variant="ghost"
-                    size="sm"
-                    className="w-10 h-10 rounded-full border-2 border-red-400 text-red-400 hover:bg-red-400 hover:text-white"
-                    title="I broke my habit"
-                  >
-                    <i className="fas fa-times text-sm"></i>
-                  </Button>
-                )}
-                
-                <Button
-                  onClick={() => toggleHabit(habit)}
-                  disabled={completed || createHabitEntryMutation.isPending}
-                  variant="ghost"
-                  size="sm"
-                  className={`w-10 h-10 rounded-full ${
-                    completed
-                      ? "bg-apple-green text-white"
-                      : "border-2 border-apple-blue hover:bg-apple-green hover:border-apple-green hover:text-white"
-                  }`}
-                >
-                  {completed ? (
-                    <i className="fas fa-check"></i>
-                  ) : (
-                    <i className="fas fa-plus"></i>
+                <div className="flex items-center space-x-2">
+                  {onStruggleClick && (
+                    <Button
+                      onClick={() => onStruggleClick(habit.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-orange-400 text-orange-400 hover:bg-orange-400 hover:text-white"
+                      title="Log hard moment"
+                    >
+                      <i className="fas fa-exclamation text-xs sm:text-sm"></i>
+                    </Button>
                   )}
-                </Button>
+                  
+                  {onBreakHabit && (
+                    <Button
+                      onClick={() => onBreakHabit(habit.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-red-400 text-red-400 hover:bg-red-400 hover:text-white"
+                      title="I broke my habit"
+                    >
+                      <i className="fas fa-times text-xs sm:text-sm"></i>
+                    </Button>
+                  )}
+                  
+                  <Button
+                    onClick={() => toggleHabit(habit)}
+                    disabled={completed || createHabitEntryMutation.isPending}
+                    variant="ghost"
+                    size="sm"
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${
+                      completed
+                        ? "bg-apple-green text-white"
+                        : "border-2 border-apple-blue hover:bg-apple-green hover:border-apple-green hover:text-white"
+                    }`}
+                  >
+                    {completed ? (
+                      <i className="fas fa-check"></i>
+                    ) : (
+                      <i className="fas fa-plus"></i>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           );
