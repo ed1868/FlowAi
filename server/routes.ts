@@ -566,6 +566,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/habits/:habitId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const habitId = parseInt(req.params.habitId);
+      const habit = await storage.updateHabit(habitId, userId, req.body);
+      if (!habit) {
+        return res.status(404).json({ message: "Habit not found" });
+      }
+      res.json(habit);
+    } catch (error) {
+      console.error("Error updating habit:", error);
+      res.status(400).json({ message: "Failed to update habit" });
+    }
+  });
+
   app.get('/api/habits', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

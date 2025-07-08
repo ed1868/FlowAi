@@ -40,9 +40,11 @@ interface HabitTrackerProps {
   simplified?: boolean;
   onStruggleClick?: (habitId: number) => void;
   onBreakHabit?: (habitId: number) => void;
+  onHabitClick?: (habit: Habit) => void;
+  isHabitGoalReached?: (habit: Habit) => boolean;
 }
 
-export default function HabitTracker({ simplified = false, onStruggleClick, onBreakHabit }: HabitTrackerProps) {
+export default function HabitTracker({ simplified = false, onStruggleClick, onBreakHabit, onHabitClick, isHabitGoalReached }: HabitTrackerProps) {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -168,9 +170,14 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
           const completed = isHabitCompleted(habit.id);
           const progress = getHabitProgress(habit);
           
+          const goalReached = isHabitGoalReached ? isHabitGoalReached(habit) : true;
+          
           return (
             <div key={habit.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 glass-button rounded-xl gap-4">
-              <div className="flex items-center space-x-3 sm:space-x-4 flex-1">
+              <div 
+                className="flex items-center space-x-3 sm:space-x-4 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => onHabitClick?.(habit)}
+              >
                 <div 
                   className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: habit.color + '20' }}
@@ -189,6 +196,7 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
                   )}
                   <div className="text-xs text-text-tertiary mt-1">
                     {habit.frequency} • Target: {habit.targetCount}
+                    {!goalReached && <span className="ml-2 text-orange-400">• Goal not reached yet</span>}
                   </div>
                 </div>
               </div>
@@ -228,17 +236,22 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
                   
                   <Button
                     onClick={() => toggleHabit(habit)}
-                    disabled={completed || createHabitEntryMutation.isPending}
+                    disabled={completed || createHabitEntryMutation.isPending || !goalReached}
                     variant="ghost"
                     size="sm"
                     className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${
                       completed
                         ? "bg-apple-green text-white"
+                        : !goalReached
+                        ? "border-2 border-gray-400 text-gray-400 cursor-not-allowed"
                         : "border-2 border-apple-blue hover:bg-apple-green hover:border-apple-green hover:text-white"
                     }`}
+                    title={!goalReached ? "Wait until goal date is reached" : completed ? "Completed" : "Mark as complete"}
                   >
                     {completed ? (
                       <i className="fas fa-check"></i>
+                    ) : !goalReached ? (
+                      <i className="fas fa-clock"></i>
                     ) : (
                       <i className="fas fa-plus"></i>
                     )}

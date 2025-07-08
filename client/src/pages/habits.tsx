@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import HabitTracker from "@/components/habit-tracker";
+import StruggleHistory from "@/components/struggle-history";
 
 interface Habit {
   id: number;
@@ -87,6 +88,12 @@ export default function Habits() {
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [breakReason, setBreakReason] = useState("");
   
+  // New state for habit details dialog
+  const [isHabitDetailsOpen, setIsHabitDetailsOpen] = useState(false);
+  const [habitToView, setHabitToView] = useState<Habit | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editHabitForm, setEditHabitForm] = useState<any>({});
+  
   // Habit form state
   const [habitForm, setHabitForm] = useState({
     name: "",
@@ -129,6 +136,12 @@ export default function Habits() {
   const { data: rituals = [], isLoading: ritualsLoading, error: ritualsError } = useQuery<ResetRitual[]>({
     queryKey: ["/api/reset-rituals"],
     enabled: isAuthenticated,
+  });
+
+  // Get habit struggles for selected habit
+  const { data: habitStruggles = [] } = useQuery({
+    queryKey: ["/api/habit-struggles", habitToView?.id],
+    enabled: isAuthenticated && !!habitToView?.id,
   });
 
   // Handle unauthorized errors
@@ -451,6 +464,82 @@ export default function Habits() {
     }
   };
 
+  // Update habit mutation
+  const updateHabitMutation = useMutation({
+    mutationFn: async (habitData: any) => {
+      return await apiRequest("PATCH", `/api/habits/${habitToView?.id}`, habitData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      toast({
+        title: "Success",
+        description: "Habit updated successfully!",
+      });
+      setIsEditMode(false);
+      setIsHabitDetailsOpen(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      console.error("Error updating habit:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update habit. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle habit click to view details
+  const handleHabitClick = (habit: Habit) => {
+    setHabitToView(habit);
+    setEditHabitForm({
+      name: habit.name,
+      description: habit.description || "",
+      frequency: habit.frequency,
+      targetCount: habit.targetCount,
+      durationValue: habit.durationValue,
+      durationType: habit.durationType,
+      icon: habit.icon,
+      color: habit.color,
+      goalMeaning: habit.goalMeaning || "",
+      goalFeeling: habit.goalFeeling || "",
+    });
+    setIsHabitDetailsOpen(true);
+    setIsEditMode(false);
+  };
+
+  // Handle habit update
+  const handleUpdateHabit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updateHabitMutation.mutateAsync(editHabitForm);
+  };
+
+  // Check if habit goal date is reached
+  const isHabitGoalReached = (habit: Habit): boolean => {
+    const createdDate = new Date(habit.createdAt);
+    const today = new Date();
+    
+    if (habit.frequency === 'daily') {
+      const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      return daysSinceCreated >= habit.durationValue;
+    } else if (habit.frequency === 'weekly') {
+      const weeksSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
+      return weeksSinceCreated >= habit.durationValue;
+    }
+    
+    return false;
+  };
+
   if (authLoading || habitsLoading || ritualsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-dark-1">
@@ -646,7 +735,12 @@ export default function Habits() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                <HabitTracker onStruggleClick={openStruggleDialog} onBreakHabit={handleBreakHabit} />
+                <HabitTracker 
+                  onStruggleClick={openStruggleDialog} 
+                  onBreakHabit={handleBreakHabit}
+                  onHabitClick={handleHabitClick}
+                  isHabitGoalReached={isHabitGoalReached}
+                />
               </CardContent>
             </Card>
 
@@ -1017,6 +1111,192 @@ export default function Habits() {
               <i className="fas fa-seedling text-apple-green mr-1"></i>
               Every reset is a chance to grow stronger. You've got this! 🌱
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Habit Details Dialog */}
+      <Dialog open={isHabitDetailsOpen} onOpenChange={setIsHabitDetailsOpen}>
+        <DialogContent className="glass-card rounded-2xl border-white/10 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {habitToView && (
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: habitToView.color + '20' }}
+                  >
+                    <i 
+                      className={`${habitToView.icon} text-xl`}
+                      style={{ color: habitToView.color }}
+                    ></i>
+                  </div>
+                )}
+                <div>
+                  <DialogTitle className="text-xl font-semibold">
+                    {isEditMode ? "Edit Habit" : habitToView?.name}
+                  </DialogTitle>
+                  {!isEditMode && habitToView?.description && (
+                    <p className="text-sm text-text-secondary">{habitToView.description}</p>
+                  )}
+                </div>
+              </div>
+              <Button
+                onClick={() => setIsEditMode(!isEditMode)}
+                variant="ghost"
+                size="sm"
+                className="text-apple-blue hover:text-apple-blue/80"
+              >
+                <i className={`fas ${isEditMode ? "fa-times" : "fa-edit"} mr-2`}></i>
+                {isEditMode ? "Cancel" : "Edit"}
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {isEditMode ? (
+              <form onSubmit={handleUpdateHabit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Habit Name</label>
+                    <input
+                      type="text"
+                      value={editHabitForm.name}
+                      onChange={(e) => setEditHabitForm({...editHabitForm, name: e.target.value})}
+                      className="w-full glass-input rounded-lg p-3"
+                      placeholder="Enter habit name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Frequency</label>
+                    <select
+                      value={editHabitForm.frequency}
+                      onChange={(e) => setEditHabitForm({...editHabitForm, frequency: e.target.value})}
+                      className="w-full glass-input rounded-lg p-3"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Description</label>
+                  <textarea
+                    value={editHabitForm.description}
+                    onChange={(e) => setEditHabitForm({...editHabitForm, description: e.target.value})}
+                    className="w-full glass-input rounded-lg p-3 h-20"
+                    placeholder="Describe your habit..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Duration</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={editHabitForm.durationValue}
+                        onChange={(e) => setEditHabitForm({...editHabitForm, durationValue: parseInt(e.target.value)})}
+                        className="flex-1 glass-input rounded-lg p-3"
+                        min="1"
+                        required
+                      />
+                      <select
+                        value={editHabitForm.durationType}
+                        onChange={(e) => setEditHabitForm({...editHabitForm, durationType: e.target.value})}
+                        className="glass-input rounded-lg p-3"
+                      >
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Target Count</label>
+                    <input
+                      type="number"
+                      value={editHabitForm.targetCount}
+                      onChange={(e) => setEditHabitForm({...editHabitForm, targetCount: parseInt(e.target.value)})}
+                      className="w-full glass-input rounded-lg p-3"
+                      min="1"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button 
+                    type="submit" 
+                    className="flex-1 bg-apple-blue hover:bg-apple-blue/90"
+                    disabled={updateHabitMutation.isPending}
+                  >
+                    {updateHabitMutation.isPending ? "Updating..." : "Update Habit"}
+                  </Button>
+                  <Button 
+                    type="button"
+                    onClick={() => setIsEditMode(false)}
+                    variant="ghost"
+                    className="px-6"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-6">
+                {/* Habit Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="glass-button rounded-lg p-4">
+                    <div className="text-sm text-text-secondary">Frequency</div>
+                    <div className="font-medium capitalize">{habitToView?.frequency}</div>
+                  </div>
+                  <div className="glass-button rounded-lg p-4">
+                    <div className="text-sm text-text-secondary">Target Count</div>
+                    <div className="font-medium">{habitToView?.targetCount}</div>
+                  </div>
+                  <div className="glass-button rounded-lg p-4">
+                    <div className="text-sm text-text-secondary">Duration</div>
+                    <div className="font-medium">{habitToView?.durationValue} {habitToView?.durationType}</div>
+                  </div>
+                  <div className="glass-button rounded-lg p-4">
+                    <div className="text-sm text-text-secondary">Current Streak</div>
+                    <div className="font-medium">{habitToView?.currentStreak} days</div>
+                  </div>
+                </div>
+
+                {/* Goal Meaning & Feeling */}
+                {(habitToView?.goalMeaning || habitToView?.goalFeeling) && (
+                  <div className="space-y-3">
+                    {habitToView?.goalMeaning && (
+                      <div className="glass-button rounded-lg p-4">
+                        <div className="text-sm text-text-secondary mb-2">Why this matters to you</div>
+                        <div className="text-sm">{habitToView.goalMeaning}</div>
+                      </div>
+                    )}
+                    {habitToView?.goalFeeling && (
+                      <div className="glass-button rounded-lg p-4">
+                        <div className="text-sm text-text-secondary mb-2">How you'll feel when accomplished</div>
+                        <div className="text-sm">{habitToView.goalFeeling}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Struggle History */}
+                <div>
+                  <h3 className="text-lg font-medium mb-3 flex items-center">
+                    <i className="fas fa-history mr-2 text-orange-400"></i>
+                    Struggle History
+                  </h3>
+                  {habitToView && (
+                    <StruggleHistory habitId={habitToView.id} />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
