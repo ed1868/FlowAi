@@ -201,7 +201,14 @@ export default function Habits() {
 
   // Get habit struggles for selected habit
   const { data: habitStruggles = [] } = useQuery({
-    queryKey: ["/api/habit-struggles", habitToView?.id],
+    queryKey: ["/api/habits", habitToView?.id, "struggles"],
+    queryFn: async () => {
+      const response = await fetch(`/api/habits/${habitToView?.id}/struggles`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch struggles');
+      }
+      return response.json();
+    },
     enabled: isAuthenticated && !!habitToView?.id,
   });
 
@@ -354,6 +361,7 @@ export default function Habits() {
       setIsStruggleDialogOpen(false);
       resetStruggleForm();
       queryClient.invalidateQueries({ queryKey: ["/api/habits", selectedHabitId, "struggles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {

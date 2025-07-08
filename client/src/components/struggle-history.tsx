@@ -19,6 +19,13 @@ interface StruggleHistoryProps {
 export default function StruggleHistory({ habitId }: StruggleHistoryProps) {
   const { data: struggles = [], isLoading } = useQuery({
     queryKey: ["/api/habits", habitId, "struggles"],
+    queryFn: async () => {
+      const response = await fetch(`/api/habits/${habitId}/struggles`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch struggles');
+      }
+      return response.json();
+    },
     enabled: !!habitId,
   });
 
@@ -77,7 +84,7 @@ export default function StruggleHistory({ habitId }: StruggleHistoryProps) {
           
           <div className="bg-white/5 rounded-lg p-3">
             <div className="text-sm text-text-secondary mb-1 font-medium">What happened:</div>
-            <p className="text-sm leading-relaxed">{struggle.note}</p>
+            <p className="text-sm leading-relaxed">{struggle.note || 'No details provided'}</p>
           </div>
           
           {(struggle.triggers || struggle.location || struggle.mood) && (
