@@ -386,19 +386,32 @@ export default function Habits() {
   // Create habit break mutation
   const createHabitBreakMutation = useMutation({
     mutationFn: async (data: { habitId: number; reason?: string }) => {
+      console.log('Creating habit break:', data);
       const response = await apiRequest("POST", `/api/habits/${data.habitId}/breaks`, {
         reason: data.reason,
       });
+      if (!response.ok) {
+        throw new Error(`Failed to create habit break: ${response.status}`);
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Habit break created successfully:', data);
       toast({
         title: "Habit break recorded",
         description: "It's okay to stumble. Your counter has been reset and you can start fresh!",
       });
+      // Close dialog and reset state
+      setIsBreakDialogOpen(false);
+      setBreakReason("");
+      setSelectedHabit(null);
+      setSelectedHabitId(null);
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/habits/today"] });
     },
     onError: (error) => {
+      console.error('Habit break error:', error);
       if (isUnauthorizedError(error as Error)) {
         toast({
           title: "Unauthorized",
@@ -412,7 +425,7 @@ export default function Habits() {
       }
       toast({
         title: "Error",
-        description: "Failed to record habit break",
+        description: "Failed to record habit break. Please try again.",
         variant: "destructive",
       });
     },
@@ -521,15 +534,19 @@ export default function Habits() {
   };
 
   const confirmBreakHabit = () => {
+    console.log('Confirming habit break for habit:', selectedHabitId);
     if (selectedHabitId) {
       createHabitBreakMutation.mutate({ 
         habitId: selectedHabitId, 
         reason: breakReason || undefined 
       });
-      setIsBreakDialogOpen(false);
-      setBreakReason("");
-      setSelectedHabit(null);
-      setSelectedHabitId(null);
+      // Don't close dialog here - let the mutation onSuccess handle it
+    } else {
+      toast({
+        title: "Error",
+        description: "No habit selected",
+        variant: "destructive",
+      });
     }
   };
 
