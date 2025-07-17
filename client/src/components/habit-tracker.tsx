@@ -116,9 +116,8 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
   };
 
   const getHabitProgress = (habit: Habit) => {
-    const createdDate = new Date(habit.createdAt);
-    const today = new Date();
-    const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    // Use current streak from database instead of days since created
+    const currentStreak = habit.currentStreak || 0;
     
     // Calculate total target days based on durationType
     let targetDays = 0;
@@ -143,10 +142,10 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
         displayType = 'days';
     }
     
-    // For daily habits, show days progress regardless of durationType
+    // For daily habits, use current streak as progress
     if (habit.frequency === 'daily') {
       return {
-        current: Math.min(daysSinceCreated, targetDays),
+        current: Math.min(currentStreak, targetDays),
         total: targetDays,
         type: 'days'
       };
@@ -154,16 +153,16 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
     
     // For weekly habits, show progress in weeks
     if (habit.frequency === 'weekly') {
-      const weeksSinceCreated = Math.floor(daysSinceCreated / 7) + 1;
+      const currentWeeks = Math.floor(currentStreak / 7);
       const targetWeeks = Math.ceil(targetDays / 7);
       return {
-        current: Math.min(weeksSinceCreated, targetWeeks),
+        current: Math.min(currentWeeks, targetWeeks),
         total: targetWeeks,
         type: 'weeks'
       };
     }
     
-    return { current: daysSinceCreated, total: targetDays, type: 'days' };
+    return { current: currentStreak, total: targetDays, type: 'days' };
   };
 
   if (!isAuthenticated) {

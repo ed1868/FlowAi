@@ -786,6 +786,9 @@ export default function Habits() {
 
   // Handle habit click to view details
   const handleHabitClick = (habit: Habit) => {
+    // Force refresh habit data to get latest streak info
+    queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+    
     setHabitToView(habit);
     setEditHabitForm({
       name: habit.name,
@@ -866,7 +869,11 @@ export default function Habits() {
           <div className="glass-card rounded-2xl p-1 flex w-full max-w-xs sm:max-w-sm">
             <Button
               variant="ghost"
-              onClick={() => setActiveTab("habits")}
+              onClick={() => {
+                setActiveTab("habits");
+                // Refresh habits data when switching to habits tab
+                queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+              }}
               className={`flex-1 px-3 sm:px-6 py-2 rounded-xl transition-colors text-sm sm:text-base ${
                 activeTab === "habits"
                   ? "bg-apple-blue text-white"
@@ -1868,7 +1875,7 @@ export default function Habits() {
                   </div>
                   <div className="glass-button rounded-lg p-4">
                     <div className="text-sm text-text-secondary">Current Streak</div>
-                    <div className="font-medium">{habitToView?.currentStreak} days</div>
+                    <div className="font-medium">{habitToView?.currentStreak || 0} days</div>
                   </div>
                 </div>
 
