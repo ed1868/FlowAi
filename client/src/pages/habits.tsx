@@ -614,16 +614,29 @@ export default function Habits() {
   const isHabitGoalReached = (habit: Habit): boolean => {
     const createdDate = new Date(habit.createdAt);
     const today = new Date();
+    const timeDiff = today.getTime() - createdDate.getTime();
     
-    if (habit.frequency === 'daily') {
-      const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      return daysSinceCreated >= habit.durationValue;
-    } else if (habit.frequency === 'weekly') {
-      const weeksSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
-      return weeksSinceCreated >= habit.durationValue;
+    // Calculate based on durationType (days, weeks, months)
+    let targetDurationInMs = 0;
+    
+    switch (habit.durationType) {
+      case 'days':
+        targetDurationInMs = habit.durationValue * 24 * 60 * 60 * 1000;
+        break;
+      case 'weeks':
+        targetDurationInMs = habit.durationValue * 7 * 24 * 60 * 60 * 1000;
+        break;
+      case 'months':
+        // Use 30 days as approximate month for consistency
+        targetDurationInMs = habit.durationValue * 30 * 24 * 60 * 60 * 1000;
+        break;
+      default:
+        // Fallback to days if durationType is not recognized
+        targetDurationInMs = habit.durationValue * 24 * 60 * 60 * 1000;
     }
     
-    return false;
+    // The goal is reached when the target duration has passed since creation
+    return timeDiff >= targetDurationInMs;
   };
 
   if (authLoading || habitsLoading || ritualsLoading) {
