@@ -218,9 +218,9 @@ export default function Habits() {
 
   // Helper function to calculate habit progress
   const getHabitProgress = (habit: Habit) => {
-    const createdDate = new Date(habit.createdAt);
-    const today = new Date();
-    const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    // Use the current streak from the database instead of days since created
+    // This gives us the actual progress based on consistent performance
+    const currentStreak = habit.currentStreak || 0;
     
     // Calculate total target days based on durationType
     let targetDays = 0;
@@ -245,10 +245,10 @@ export default function Habits() {
         displayType = 'days';
     }
     
-    // For daily habits, show days progress regardless of durationType
+    // For daily habits, use current streak as progress
     if (habit.frequency === 'daily') {
       return {
-        current: Math.min(daysSinceCreated, targetDays),
+        current: Math.min(currentStreak, targetDays),
         total: targetDays,
         type: 'days'
       };
@@ -256,16 +256,16 @@ export default function Habits() {
     
     // For weekly habits, show progress in weeks
     if (habit.frequency === 'weekly') {
-      const weeksSinceCreated = Math.floor(daysSinceCreated / 7) + 1;
+      const currentWeeks = Math.floor(currentStreak / 7);
       const targetWeeks = Math.ceil(targetDays / 7);
       return {
-        current: Math.min(weeksSinceCreated, targetWeeks),
+        current: Math.min(currentWeeks, targetWeeks),
         total: targetWeeks,
         type: 'weeks'
       };
     }
     
-    return { current: daysSinceCreated, total: targetDays, type: 'days' };
+    return { current: currentStreak, total: targetDays, type: 'days' };
   };
 
   // Get current location function
@@ -2108,7 +2108,7 @@ export default function Habits() {
               <div className="text-center">
                 <div className="glass-card p-4 mb-4 border border-red-500/20">
                   <div className="flex items-center justify-center gap-3 mb-2">
-                    <span className="text-2xl">{ritualToDelete.icon}</span>
+                    <i className={`${ritualToDelete.icon} text-2xl`}></i>
                     <span className="font-medium text-lg">{ritualToDelete.name}</span>
                   </div>
                   {ritualToDelete.description && (
