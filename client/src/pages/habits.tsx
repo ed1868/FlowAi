@@ -1176,12 +1176,16 @@ export default function Habits() {
               </CardContent>
             </Card>
 
-            {/* Quick Add Rituals */}
-            {rituals.length === 0 && (
-              <Card className="glass-card rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">Popular Reset Rituals</CardTitle>
-                </CardHeader>
+            {/* Quick Add Rituals - Always show templates */}
+            <Card className="glass-card rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">
+                  {rituals.length === 0 ? "Popular Reset Rituals" : "Add More Rituals"}
+                </CardTitle>
+                <p className="text-sm text-text-secondary">
+                  Quick templates to get started or expand your collection
+                </p>
+              </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {defaultRituals.map((ritual, index) => (
@@ -1207,7 +1211,6 @@ export default function Habits() {
                   </div>
                 </CardContent>
               </Card>
-            )}
 
             {/* Reset Ritual History */}
             {resetHistory.length > 0 && (
@@ -1838,7 +1841,7 @@ export default function Habits() {
 
       {/* Complete Ritual Dialog */}
       <Dialog open={isCompleteRitualDialogOpen} onOpenChange={setIsCompleteRitualDialogOpen}>
-        <DialogContent className="glass-card border-none max-w-md">
+        <DialogContent className="glass-card border-none max-w-md" aria-describedby="complete-ritual-description">
           <DialogHeader>
             <DialogTitle className="gradient-text flex items-center gap-2">
               <i className="fas fa-spa text-apple-green"></i>
@@ -1848,6 +1851,9 @@ export default function Habits() {
               {selectedRitual?.name} • {selectedRitual?.duration} minutes
             </p>
           </DialogHeader>
+          <div id="complete-ritual-description" className="sr-only">
+            Complete a reset ritual and optionally log what triggered the need and any reflections
+          </div>
           <form 
             onSubmit={(e) => {
               e.preventDefault();
