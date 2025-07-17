@@ -785,22 +785,27 @@ export default function Habits() {
   });
 
   // Handle habit click to view details
-  const handleHabitClick = (habit: Habit) => {
+  const handleHabitClick = async (habit: Habit) => {
     // Force refresh habit data to get latest streak info
-    queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+    await queryClient.refetchQueries({ queryKey: ["/api/habits"] });
     
-    setHabitToView(habit);
+    // Get the updated habit data
+    const updatedHabits = queryClient.getQueryData(["/api/habits"]) as Habit[];
+    const updatedHabit = updatedHabits?.find(h => h.id === habit.id) || habit;
+    
+    setHabitToView(updatedHabit);
     setEditHabitForm({
-      name: habit.name,
-      description: habit.description || "",
-      frequency: habit.frequency,
-      targetCount: habit.targetCount,
-      durationValue: habit.durationValue,
-      durationType: habit.durationType,
-      icon: habit.icon,
-      color: habit.color,
-      goalMeaning: habit.goalMeaning || "",
-      goalFeeling: habit.goalFeeling || "",
+      name: updatedHabit.name,
+      description: updatedHabit.description || "",
+      frequency: updatedHabit.frequency,
+      targetCount: updatedHabit.targetCount,
+      durationValue: updatedHabit.durationValue,
+      durationType: updatedHabit.durationType,
+      icon: updatedHabit.icon,
+      color: updatedHabit.color,
+      goalMeaning: updatedHabit.goalMeaning || "",
+      goalFeeling: updatedHabit.goalFeeling || "",
     });
     setIsHabitDetailsOpen(true);
     setIsEditMode(false);
@@ -869,10 +874,13 @@ export default function Habits() {
           <div className="glass-card rounded-2xl p-1 flex w-full max-w-xs sm:max-w-sm">
             <Button
               variant="ghost"
-              onClick={() => {
+              onClick={async () => {
                 setActiveTab("habits");
-                // Refresh habits data when switching to habits tab
-                queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+                // Force complete refresh of habits data
+                await queryClient.invalidateQueries({ queryKey: ["/api/habits"] });
+                await queryClient.refetchQueries({ queryKey: ["/api/habits"] });
+                await queryClient.invalidateQueries({ queryKey: ["/api/habits/today"] });
+                await queryClient.refetchQueries({ queryKey: ["/api/habits/today"] });
               }}
               className={`flex-1 px-3 sm:px-6 py-2 rounded-xl transition-colors text-sm sm:text-base ${
                 activeTab === "habits"

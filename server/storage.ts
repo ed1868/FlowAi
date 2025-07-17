@@ -294,11 +294,10 @@ export class DatabaseStorage implements IStorage {
       userHabits.map(async (habit) => {
         const entries = await this.getHabitEntries(habit.id, userId);
         const progress = this.calculateHabitProgress(habit, entries);
-        const currentStreak = this.calculateCurrentStreak(entries);
+        // Use the current streak from database instead of recalculating
         
         return {
           ...habit,
-          currentStreak,
           progress: progress.progressText,
           isCompleted: progress.isCompleted
         };
