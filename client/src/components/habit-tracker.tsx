@@ -134,7 +134,8 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
         displayType = `${habit.durationValue > 1 ? 'weeks' : 'week'}`;
         break;
       case 'months':
-        targetDays = habit.durationValue * 30; // Using 30 days per month for consistency
+        // More accurate calculation: 365.25 days per year / 12 months ≈ 30.44 days per month
+        targetDays = Math.round(habit.durationValue * 30.44);
         displayType = `${habit.durationValue > 1 ? 'months' : 'month'}`;
         break;
       default:

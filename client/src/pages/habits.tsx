@@ -627,8 +627,8 @@ export default function Habits() {
         targetDurationInMs = habit.durationValue * 7 * 24 * 60 * 60 * 1000;
         break;
       case 'months':
-        // Use 30 days as approximate month for consistency
-        targetDurationInMs = habit.durationValue * 30 * 24 * 60 * 60 * 1000;
+        // More accurate calculation: 365.25 days per year / 12 months ≈ 30.44 days per month
+        targetDurationInMs = Math.round(habit.durationValue * 30.44) * 24 * 60 * 60 * 1000;
         break;
       default:
         // Fallback to days if durationType is not recognized
