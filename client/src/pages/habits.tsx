@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -2022,20 +2022,16 @@ export default function Habits() {
 
       {/* Cause Selection Dialog for Quick-Add Rituals */}
       <Dialog open={isCauseSelectionOpen} onOpenChange={setIsCauseSelectionOpen}>
-        <DialogContent className="glass-card border-none max-w-2xl w-full mx-auto" aria-describedby="cause-selection-description">
+        <DialogContent className="glass-card border-none max-w-2xl w-[95vw] sm:w-full mx-auto max-h-[90vh] overflow-hidden">
           <DialogHeader className="text-center">
             <DialogTitle className="gradient-text flex items-center justify-center gap-2 text-xl">
               <i className="fas fa-tag text-apple-blue"></i>
               Why do you need this ritual?
             </DialogTitle>
-            <p className="text-text-secondary">
+            <DialogDescription className="text-text-secondary">
               {pendingRitualData?.name} • {pendingRitualData?.duration} minutes
-            </p>
+            </DialogDescription>
           </DialogHeader>
-          
-          <div id="cause-selection-description" className="sr-only">
-            Select the cause that usually leads you to need this reset ritual
-          </div>
           
           <div className="space-y-6">
             <div className="text-center">
@@ -2044,19 +2040,27 @@ export default function Habits() {
               </p>
               
               {/* Carousel Grid Layout */}
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-80 overflow-y-auto px-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-80 overflow-y-auto px-2">
                 {resetCauses.map((cause) => (
-                  <Button
-                    key={cause.value}
-                    variant="ghost"
-                    onClick={() => confirmRitualWithCause(cause.value)}
-                    className="glass-button flex flex-col items-center justify-center p-4 h-20 hover:scale-105 transition-all duration-200 hover:shadow-lg"
-                  >
-                    <span className="text-2xl mb-1">{cause.icon}</span>
-                    <span className="text-xs font-medium text-center leading-tight">
-                      {cause.label}
-                    </span>
-                  </Button>
+                  <TooltipProvider key={cause.value}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          onClick={() => confirmRitualWithCause(cause.value)}
+                          className="glass-button flex flex-col items-center justify-center p-2.5 h-20 hover:scale-105 transition-all duration-200 hover:shadow-lg relative w-full"
+                        >
+                          <span className="text-lg mb-1">{cause.icon}</span>
+                          <span className="text-xs font-medium text-center leading-tight break-words max-w-full px-0.5 overflow-hidden line-clamp-2">
+                            {cause.label}
+                          </span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{cause.label}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 ))}
               </div>
             </div>
