@@ -118,26 +118,51 @@ export default function HabitTracker({ simplified = false, onStruggleClick, onBr
   const getHabitProgress = (habit: Habit) => {
     const createdDate = new Date(habit.createdAt);
     const today = new Date();
+    const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
+    // Calculate total target days based on durationType
+    let targetDays = 0;
+    let displayType = 'days';
+    
+    switch (habit.durationType) {
+      case 'days':
+        targetDays = habit.durationValue;
+        displayType = `${targetDays > 1 ? 'days' : 'day'}`;
+        break;
+      case 'weeks':
+        targetDays = habit.durationValue * 7;
+        displayType = `${habit.durationValue > 1 ? 'weeks' : 'week'}`;
+        break;
+      case 'months':
+        targetDays = habit.durationValue * 30; // Using 30 days per month for consistency
+        displayType = `${habit.durationValue > 1 ? 'months' : 'month'}`;
+        break;
+      default:
+        targetDays = habit.durationValue;
+        displayType = 'days';
+    }
+    
+    // For daily habits, show days progress regardless of durationType
     if (habit.frequency === 'daily') {
-      const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      const targetDays = habit.durationValue;
       return {
         current: Math.min(daysSinceCreated, targetDays),
         total: targetDays,
-        type: `${targetDays > 1 ? 'days' : 'day'}`
+        type: 'days'
       };
-    } else if (habit.frequency === 'weekly') {
-      const weeksSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
-      const targetWeeks = habit.durationValue;
+    } 
+    
+    // For weekly habits, show progress in weeks
+    if (habit.frequency === 'weekly') {
+      const weeksSinceCreated = Math.floor(daysSinceCreated / 7) + 1;
+      const targetWeeks = Math.ceil(targetDays / 7);
       return {
         current: Math.min(weeksSinceCreated, targetWeeks),
         total: targetWeeks,
-        type: `${targetWeeks > 1 ? 'weeks' : 'week'}`
+        type: 'weeks'
       };
     }
     
-    return { current: 0, total: habit.durationValue, type: 'days' };
+    return { current: daysSinceCreated, total: targetDays, type: 'days' };
   };
 
   if (!isAuthenticated) {
