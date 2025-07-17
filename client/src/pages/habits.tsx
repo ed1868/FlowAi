@@ -167,6 +167,8 @@ export default function Habits() {
   const [isResetHistoryOpen, setIsResetHistoryOpen] = useState(false);
   const [isCompleteRitualDialogOpen, setIsCompleteRitualDialogOpen] = useState(false);
   const [isCauseSelectionOpen, setIsCauseSelectionOpen] = useState(false);
+  const [isDeleteRitualDialogOpen, setIsDeleteRitualDialogOpen] = useState(false);
+  const [ritualToDelete, setRitualToDelete] = useState<ResetRitual | null>(null);
   const [selectedRitual, setSelectedRitual] = useState<ResetRitual | null>(null);
   const [pendingRitualData, setPendingRitualData] = useState<any>(null);
 
@@ -1214,9 +1216,8 @@ export default function Habits() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              if (window.confirm("Are you sure you want to delete this ritual?")) {
-                                deleteRitualMutation.mutate(ritual.id);
-                              }
+                              setRitualToDelete(ritual);
+                              setIsDeleteRitualDialogOpen(true);
                             }}
                             className="opacity-0 group-hover:opacity-100 transition-opacity text-text-tertiary hover:text-red-500"
                             disabled={deleteRitualMutation.isPending}
@@ -2083,6 +2084,83 @@ export default function Habits() {
                 className="px-6 bg-apple-blue hover:bg-apple-blue/80 text-white"
               >
                 Skip & Add
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Ritual Confirmation Dialog */}
+      <Dialog open={isDeleteRitualDialogOpen} onOpenChange={setIsDeleteRitualDialogOpen}>
+        <DialogContent className="glass-card border-none max-w-md w-[90vw] sm:w-full mx-auto">
+          <DialogHeader className="text-center">
+            <DialogTitle className="gradient-text flex items-center justify-center gap-2 text-xl">
+              <i className="fas fa-exclamation-triangle text-red-500"></i>
+              Delete Reset Ritual
+            </DialogTitle>
+            <DialogDescription className="text-text-secondary mt-2">
+              This action cannot be undone
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {ritualToDelete && (
+              <div className="text-center">
+                <div className="glass-card p-4 mb-4 border border-red-500/20">
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    <span className="text-2xl">{ritualToDelete.icon}</span>
+                    <span className="font-medium text-lg">{ritualToDelete.name}</span>
+                  </div>
+                  {ritualToDelete.description && (
+                    <p className="text-sm text-text-secondary">{ritualToDelete.description}</p>
+                  )}
+                  {ritualToDelete.duration && (
+                    <p className="text-xs text-text-tertiary mt-1">{ritualToDelete.duration} minutes</p>
+                  )}
+                </div>
+                
+                <p className="text-sm text-text-secondary">
+                  Are you sure you want to permanently delete this reset ritual? This will also remove any completion history associated with it.
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-3 justify-center pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsDeleteRitualDialogOpen(false);
+                  setRitualToDelete(null);
+                }}
+                className="px-6 flex-1 sm:flex-none"
+                disabled={deleteRitualMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  if (ritualToDelete) {
+                    deleteRitualMutation.mutate(ritualToDelete.id);
+                    setIsDeleteRitualDialogOpen(false);
+                    setRitualToDelete(null);
+                  }
+                }}
+                className="px-6 bg-red-500 hover:bg-red-600 text-white flex-1 sm:flex-none"
+                disabled={deleteRitualMutation.isPending}
+              >
+                {deleteRitualMutation.isPending ? (
+                  <div className="flex items-center gap-2">
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Deleting...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <i className="fas fa-trash"></i>
+                    Delete Ritual
+                  </div>
+                )}
               </Button>
             </div>
           </div>
