@@ -128,6 +128,58 @@ export default function Habits() {
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
+  // Helper function to calculate habit progress
+  const getHabitProgress = (habit: Habit) => {
+    const createdDate = new Date(habit.createdAt);
+    const today = new Date();
+    const daysSinceCreated = Math.floor((today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // Calculate total target days based on durationType
+    let targetDays = 0;
+    let displayType = 'days';
+    
+    switch (habit.durationType) {
+      case 'days':
+        targetDays = habit.durationValue;
+        displayType = `${targetDays > 1 ? 'days' : 'day'}`;
+        break;
+      case 'weeks':
+        targetDays = habit.durationValue * 7;
+        displayType = `${habit.durationValue > 1 ? 'weeks' : 'week'}`;
+        break;
+      case 'months':
+        // More accurate calculation: 365.25 days per year / 12 months ≈ 30.44 days per month
+        targetDays = Math.round(habit.durationValue * 30.44);
+        displayType = `${habit.durationValue > 1 ? 'months' : 'month'}`;
+        break;
+      default:
+        targetDays = habit.durationValue;
+        displayType = 'days';
+    }
+    
+    // For daily habits, show days progress regardless of durationType
+    if (habit.frequency === 'daily') {
+      return {
+        current: Math.min(daysSinceCreated, targetDays),
+        total: targetDays,
+        type: 'days'
+      };
+    } 
+    
+    // For weekly habits, show progress in weeks
+    if (habit.frequency === 'weekly') {
+      const weeksSinceCreated = Math.floor(daysSinceCreated / 7) + 1;
+      const targetWeeks = Math.ceil(targetDays / 7);
+      return {
+        current: Math.min(weeksSinceCreated, targetWeeks),
+        total: targetWeeks,
+        type: 'weeks'
+      };
+    }
+    
+    return { current: daysSinceCreated, total: targetDays, type: 'days' };
+  };
+
   // Get current location function
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -1398,6 +1450,66 @@ export default function Habits() {
               </form>
             ) : (
               <div className="space-y-6">
+                {/* Progress Circle */}
+                {habitToView && (() => {
+                  const progress = getHabitProgress(habitToView);
+                  const percentage = Math.min((progress.current / progress.total) * 100, 100);
+                  const radius = 80;
+                  const circumference = 2 * Math.PI * radius;
+                  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+                  
+                  return (
+                    <div className="flex justify-center mb-8">
+                      <div className="relative">
+                        <svg width="200" height="200" className="transform -rotate-90">
+                          {/* Background circle */}
+                          <circle
+                            cx="100"
+                            cy="100"
+                            r={radius}
+                            stroke="rgba(255, 255, 255, 0.1)"
+                            strokeWidth="12"
+                            fill="none"
+                          />
+                          {/* Progress circle */}
+                          <circle
+                            cx="100"
+                            cy="100"
+                            r={radius}
+                            stroke={habitToView.color}
+                            strokeWidth="12"
+                            fill="none"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                            strokeLinecap="round"
+                            className="transition-all duration-1000 ease-out"
+                          />
+                          {/* Progress indicator dot */}
+                          <circle
+                            cx={100 + radius * Math.cos((percentage / 100) * 2 * Math.PI - Math.PI / 2)}
+                            cy={100 + radius * Math.sin((percentage / 100) * 2 * Math.PI - Math.PI / 2)}
+                            r="8"
+                            fill={habitToView.color}
+                            className="transition-all duration-1000 ease-out"
+                          />
+                        </svg>
+                        {/* Center content */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <div className="text-3xl font-bold text-text-primary">
+                            {progress.current}
+                          </div>
+                          <div className="text-sm text-text-secondary">
+                            of {progress.total} {progress.type}
+                          </div>
+                          <div className="text-xs text-text-tertiary mt-1">
+                            {Math.round(percentage)}% Complete
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Habit Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="glass-button rounded-lg p-4">
