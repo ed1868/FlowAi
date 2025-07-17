@@ -2022,39 +2022,46 @@ export default function Habits() {
 
       {/* Cause Selection Dialog for Quick-Add Rituals */}
       <Dialog open={isCauseSelectionOpen} onOpenChange={setIsCauseSelectionOpen}>
-        <DialogContent className="glass-card border-none max-w-md">
-          <DialogHeader>
-            <DialogTitle className="gradient-text flex items-center gap-2">
+        <DialogContent className="glass-card border-none max-w-2xl w-full mx-auto" aria-describedby="cause-selection-description">
+          <DialogHeader className="text-center">
+            <DialogTitle className="gradient-text flex items-center justify-center gap-2 text-xl">
               <i className="fas fa-tag text-apple-blue"></i>
               Why do you need this ritual?
             </DialogTitle>
-            <p className="text-text-secondary text-sm">
+            <p className="text-text-secondary">
               {pendingRitualData?.name} • {pendingRitualData?.duration} minutes
             </p>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm text-text-secondary block mb-3">
-                Select what usually causes you to need this type of reset:
-              </label>
-              <div className="grid grid-cols-1 gap-2">
+          
+          <div id="cause-selection-description" className="sr-only">
+            Select the cause that usually leads you to need this reset ritual
+          </div>
+          
+          <div className="space-y-6">
+            <div className="text-center">
+              <p className="text-sm text-text-secondary mb-4">
+                Select what usually causes you to need this type of reset
+              </p>
+              
+              {/* Carousel Grid Layout */}
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-80 overflow-y-auto px-2">
                 {resetCauses.map((cause) => (
                   <Button
                     key={cause.value}
                     variant="ghost"
                     onClick={() => confirmRitualWithCause(cause.value)}
-                    className="glass-button justify-start p-3 h-auto hover:scale-105 transition-transform"
+                    className="glass-button flex flex-col items-center justify-center p-4 h-20 hover:scale-105 transition-all duration-200 hover:shadow-lg"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{cause.icon}</span>
-                      <span className="text-sm font-medium">{cause.label}</span>
-                    </div>
+                    <span className="text-2xl mb-1">{cause.icon}</span>
+                    <span className="text-xs font-medium text-center leading-tight">
+                      {cause.label}
+                    </span>
                   </Button>
                 ))}
               </div>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-3 justify-center pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -2062,14 +2069,14 @@ export default function Habits() {
                   setIsCauseSelectionOpen(false);
                   setPendingRitualData(null);
                 }}
-                className="flex-1"
+                className="px-6"
               >
                 Cancel
               </Button>
               <Button
                 type="button"
                 onClick={() => confirmRitualWithCause("")}
-                className="flex-1 bg-apple-blue hover:bg-apple-blue/80 text-white"
+                className="px-6 bg-apple-blue hover:bg-apple-blue/80 text-white"
               >
                 Skip & Add
               </Button>
