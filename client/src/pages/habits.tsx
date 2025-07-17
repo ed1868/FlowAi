@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import HabitTracker from "@/components/habit-tracker";
 import StruggleHistory from "@/components/struggle-history";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Habit {
   id: number;
@@ -1458,41 +1459,121 @@ export default function Habits() {
                   const circumference = 2 * Math.PI * radius;
                   const strokeDashoffset = circumference - (percentage / 100) * circumference;
                   
+                  // Define milestone emojis and motivational messages based on progress
+                  const getMilestones = () => {
+                    const milestones = [
+                      { percent: 10, emoji: "🌱", message: "Seeds of change planted! You're building awareness." },
+                      { percent: 25, emoji: "🔥", message: "Momentum building! You're feeling more motivated." },
+                      { percent: 40, emoji: "💪", message: "Strength growing! This is becoming natural." },
+                      { percent: 60, emoji: "⭐", message: "Halfway there! You're gaining confidence." },
+                      { percent: 75, emoji: "🎯", message: "Almost there! Focus and determination are strong." },
+                      { percent: 90, emoji: "🏆", message: "Excellence achieved! You feel unstoppable." },
+                      { percent: 100, emoji: "👑", message: "Mastery unlocked! You've transformed your mindset." }
+                    ];
+                    
+                    return milestones.filter(m => percentage >= m.percent);
+                  };
+                  
+                  const achievedMilestones = getMilestones();
+                  const nextMilestone = [
+                    { percent: 10, emoji: "🌱" },
+                    { percent: 25, emoji: "🔥" },
+                    { percent: 40, emoji: "💪" },
+                    { percent: 60, emoji: "⭐" },
+                    { percent: 75, emoji: "🎯" },
+                    { percent: 90, emoji: "🏆" },
+                    { percent: 100, emoji: "👑" }
+                  ].find(m => percentage < m.percent);
+                  
                   return (
                     <div className="flex justify-center mb-8">
                       <div className="relative">
-                        <svg width="200" height="200" className="transform -rotate-90">
+                        <svg width="220" height="220" className="transform -rotate-90">
                           {/* Background circle */}
                           <circle
-                            cx="100"
-                            cy="100"
+                            cx="110"
+                            cy="110"
                             r={radius}
                             stroke="rgba(255, 255, 255, 0.1)"
-                            strokeWidth="12"
+                            strokeWidth="16"
                             fill="none"
                           />
-                          {/* Progress circle */}
+                          {/* Progress circle with gradient */}
+                          <defs>
+                            <linearGradient id={`gradient-${habitToView.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor={habitToView.color} />
+                              <stop offset="100%" stopColor={habitToView.color + "80"} />
+                            </linearGradient>
+                          </defs>
                           <circle
-                            cx="100"
-                            cy="100"
+                            cx="110"
+                            cy="110"
                             r={radius}
-                            stroke={habitToView.color}
-                            strokeWidth="12"
+                            stroke={`url(#gradient-${habitToView.id})`}
+                            strokeWidth="16"
                             fill="none"
                             strokeDasharray={circumference}
                             strokeDashoffset={strokeDashoffset}
                             strokeLinecap="round"
                             className="transition-all duration-1000 ease-out"
-                          />
-                          {/* Progress indicator dot */}
-                          <circle
-                            cx={100 + radius * Math.cos((percentage / 100) * 2 * Math.PI - Math.PI / 2)}
-                            cy={100 + radius * Math.sin((percentage / 100) * 2 * Math.PI - Math.PI / 2)}
-                            r="8"
-                            fill={habitToView.color}
-                            className="transition-all duration-1000 ease-out"
+                            style={{ filter: 'drop-shadow(0 0 8px rgba(0,123,255,0.3))' }}
                           />
                         </svg>
+                        
+                        {/* Milestone emojis around the circle */}
+                        {[
+                          { percent: 10, emoji: "🌱", message: "Seeds of change planted! You're building awareness." },
+                          { percent: 25, emoji: "🔥", message: "Momentum building! You're feeling more motivated." },
+                          { percent: 40, emoji: "💪", message: "Strength growing! This is becoming natural." },
+                          { percent: 60, emoji: "⭐", message: "Halfway there! You're gaining confidence." },
+                          { percent: 75, emoji: "🎯", message: "Almost there! Focus and determination are strong." },
+                          { percent: 90, emoji: "🏆", message: "Excellence achieved! You feel unstoppable." },
+                          { percent: 100, emoji: "👑", message: "Mastery unlocked! You've transformed your mindset." }
+                        ].map((milestone, index) => {
+                          const angle = (milestone.percent / 100) * 2 * Math.PI - Math.PI / 2;
+                          const x = 110 + (radius + 20) * Math.cos(angle);
+                          const y = 110 + (radius + 20) * Math.sin(angle);
+                          const achieved = percentage >= milestone.percent;
+                          
+                          return (
+                            <TooltipProvider key={index}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className={`absolute w-8 h-8 flex items-center justify-center rounded-full transition-all duration-500 cursor-pointer hover:scale-125 ${
+                                      achieved 
+                                        ? 'bg-white/20 backdrop-blur-sm border-2 border-white/30 scale-110 shadow-lg' 
+                                        : 'bg-white/5 border border-white/10 scale-90 opacity-50'
+                                    }`}
+                                    style={{
+                                      left: x - 16,
+                                      top: y - 16,
+                                      transform: `scale(${achieved ? 1.1 : 0.9})`,
+                                    }}
+                                  >
+                                    <span className={`text-sm transition-all duration-300 ${achieved ? 'filter-none' : 'grayscale opacity-50'}`}>
+                                      {milestone.emoji}
+                                    </span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  className="glass-card border-white/20 max-w-xs"
+                                >
+                                  <div className="p-2">
+                                    <div className="font-medium text-sm mb-1">
+                                      {achieved ? `${milestone.percent}% Milestone Achieved!` : `${milestone.percent}% Milestone`}
+                                    </div>
+                                    <div className="text-xs text-text-secondary">
+                                      {achieved ? milestone.message : `Reach ${milestone.percent}% to unlock this milestone`}
+                                    </div>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })}
+                        
                         {/* Center content */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <div className="text-3xl font-bold text-text-primary">
@@ -1504,6 +1585,12 @@ export default function Habits() {
                           <div className="text-xs text-text-tertiary mt-1">
                             {Math.round(percentage)}% Complete
                           </div>
+                          {nextMilestone && (
+                            <div className="text-xs text-apple-blue mt-2 flex items-center gap-1">
+                              <span>Next: {nextMilestone.emoji}</span>
+                              <span>{nextMilestone.percent}%</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
