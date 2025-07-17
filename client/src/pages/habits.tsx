@@ -53,6 +53,7 @@ interface ResetRitual {
   icon: string;
   duration?: number;
   category: string;
+  cause?: string;
   isDefault: boolean;
   createdAt: string;
 }
@@ -62,6 +63,7 @@ interface ResetCompletion {
   ritualId: number;
   userId: string;
   trigger?: string;
+  cause?: string;
   notes?: string;
   completedAt: string;
   ritual?: ResetRitual; // populated by join
@@ -151,18 +153,22 @@ export default function Habits() {
     icon: "fas fa-spa",
     duration: 5,
     category: "wellness",
+    cause: "",
   });
 
   // Reset completion form state
   const [resetCompletionForm, setResetCompletionForm] = useState({
     trigger: "",
+    cause: "",
     notes: "",
   });
 
   // New state for ritual management
   const [isResetHistoryOpen, setIsResetHistoryOpen] = useState(false);
   const [isCompleteRitualDialogOpen, setIsCompleteRitualDialogOpen] = useState(false);
+  const [isCauseSelectionOpen, setIsCauseSelectionOpen] = useState(false);
   const [selectedRitual, setSelectedRitual] = useState<ResetRitual | null>(null);
+  const [pendingRitualData, setPendingRitualData] = useState<any>(null);
 
   // Reset triggers
   const resetTriggers = [
@@ -177,6 +183,24 @@ export default function Habits() {
     { value: "bored", label: "Bored", icon: "😑" },
     { value: "restless", label: "Restless", icon: "🔄" },
     { value: "other", label: "Other", icon: "🤔" },
+  ];
+
+  const resetCauses = [
+    { value: "work-deadline", label: "Work Deadline", icon: "⏰" },
+    { value: "difficult-conversation", label: "Difficult Conversation", icon: "💬" },
+    { value: "technology-issues", label: "Technology Issues", icon: "💻" },
+    { value: "family-stress", label: "Family Stress", icon: "👨‍👩‍👧‍👦" },
+    { value: "financial-worry", label: "Financial Worry", icon: "💰" },
+    { value: "health-concern", label: "Health Concern", icon: "🏥" },
+    { value: "social-situation", label: "Social Situation", icon: "👥" },
+    { value: "decision-fatigue", label: "Decision Fatigue", icon: "🤔" },
+    { value: "information-overload", label: "Information Overload", icon: "📚" },
+    { value: "perfectionism", label: "Perfectionism", icon: "✨" },
+    { value: "comparison", label: "Comparison with Others", icon: "👀" },
+    { value: "unexpected-change", label: "Unexpected Change", icon: "🔄" },
+    { value: "lack-of-sleep", label: "Lack of Sleep", icon: "😴" },
+    { value: "physical-discomfort", label: "Physical Discomfort", icon: "🤕" },
+    { value: "other", label: "Other", icon: "💭" },
   ];
 
   // Struggle form state
@@ -613,6 +637,7 @@ export default function Habits() {
       icon: "fas fa-spa",
       duration: 5,
       category: "wellness",
+      cause: "",
     });
   };
 
@@ -665,7 +690,19 @@ export default function Habits() {
   };
 
   const addDefaultRitual = (defaultRitual: any) => {
-    createRitualMutation.mutate(defaultRitual);
+    setPendingRitualData(defaultRitual);
+    setIsCauseSelectionOpen(true);
+  };
+
+  const confirmRitualWithCause = (cause: string) => {
+    if (pendingRitualData) {
+      createRitualMutation.mutate({
+        ...pendingRitualData,
+        cause: cause
+      });
+      setPendingRitualData(null);
+      setIsCauseSelectionOpen(false);
+    }
   };
 
   const handleCreateStruggle = (e: React.FormEvent) => {
@@ -1074,6 +1111,23 @@ export default function Habits() {
                           rows={3}
                         />
                       </div>
+                      <div>
+                        <Select value={ritualForm.cause} onValueChange={(value) => setRitualForm(prev => ({ ...prev, cause: value }))}>
+                          <SelectTrigger className="glass-button border-none">
+                            <SelectValue placeholder="What usually causes you to need this?" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {resetCauses.map((cause) => (
+                              <SelectItem key={cause.value} value={cause.value}>
+                                <span className="flex items-center gap-2">
+                                  <span>{cause.icon}</span>
+                                  <span>{cause.label}</span>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Select value={ritualForm.category} onValueChange={(value) => setRitualForm(prev => ({ ...prev, category: value }))}>
@@ -1132,9 +1186,16 @@ export default function Habits() {
                             <div className="text-sm text-text-tertiary">
                               {ritual.description} • {ritual.duration} minutes
                             </div>
-                            <Badge variant="secondary" className="text-xs mt-1">
-                              {ritual.category}
-                            </Badge>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">
+                                {ritual.category}
+                              </Badge>
+                              {ritual.cause && (
+                                <Badge variant="outline" className="text-xs">
+                                  {resetCauses.find(c => c.value === ritual.cause)?.icon} {resetCauses.find(c => c.value === ritual.cause)?.label || ritual.cause}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1241,6 +1302,11 @@ export default function Habits() {
                               {completion.trigger && (
                                 <span className="ml-2">
                                   • {resetTriggers.find(t => t.value === completion.trigger)?.icon} {completion.trigger}
+                                </span>
+                              )}
+                              {completion.cause && (
+                                <span className="ml-2">
+                                  • {resetCauses.find(c => c.value === completion.cause)?.icon} {resetCauses.find(c => c.value === completion.cause)?.label || completion.cause}
                                 </span>
                               )}
                             </div>
@@ -1861,6 +1927,7 @@ export default function Habits() {
                 completeRitualMutation.mutate({
                   ritualId: selectedRitual.id,
                   trigger: resetCompletionForm.trigger || undefined,
+                  cause: resetCompletionForm.cause || undefined,
                   notes: resetCompletionForm.notes || undefined,
                 });
               }
@@ -1884,6 +1951,30 @@ export default function Habits() {
                       <div className="flex items-center gap-2">
                         <span>{trigger.icon}</span>
                         <span>{trigger.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm text-text-secondary block mb-2">
+                What caused this situation? (Optional)
+              </label>
+              <Select 
+                value={resetCompletionForm.cause} 
+                onValueChange={(value) => setResetCompletionForm(prev => ({ ...prev, cause: value }))}
+              >
+                <SelectTrigger className="glass-button border-none">
+                  <SelectValue placeholder="Select a cause..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {resetCauses.map((cause) => (
+                    <SelectItem key={cause.value} value={cause.value}>
+                      <div className="flex items-center gap-2">
+                        <span>{cause.icon}</span>
+                        <span>{cause.label}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -1919,13 +2010,71 @@ export default function Habits() {
                 onClick={() => {
                   setIsCompleteRitualDialogOpen(false);
                   setSelectedRitual(null);
-                  setResetCompletionForm({ trigger: "", notes: "" });
+                  setResetCompletionForm({ trigger: "", cause: "", notes: "" });
                 }}
               >
                 Cancel
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cause Selection Dialog for Quick-Add Rituals */}
+      <Dialog open={isCauseSelectionOpen} onOpenChange={setIsCauseSelectionOpen}>
+        <DialogContent className="glass-card border-none max-w-md">
+          <DialogHeader>
+            <DialogTitle className="gradient-text flex items-center gap-2">
+              <i className="fas fa-tag text-apple-blue"></i>
+              Why do you need this ritual?
+            </DialogTitle>
+            <p className="text-text-secondary text-sm">
+              {pendingRitualData?.name} • {pendingRitualData?.duration} minutes
+            </p>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-text-secondary block mb-3">
+                Select what usually causes you to need this type of reset:
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                {resetCauses.map((cause) => (
+                  <Button
+                    key={cause.value}
+                    variant="ghost"
+                    onClick={() => confirmRitualWithCause(cause.value)}
+                    className="glass-button justify-start p-3 h-auto hover:scale-105 transition-transform"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{cause.icon}</span>
+                      <span className="text-sm font-medium">{cause.label}</span>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsCauseSelectionOpen(false);
+                  setPendingRitualData(null);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => confirmRitualWithCause("")}
+                className="flex-1 bg-apple-blue hover:bg-apple-blue/80 text-white"
+              >
+                Skip & Add
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

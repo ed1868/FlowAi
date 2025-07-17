@@ -787,8 +787,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const ritualId = parseInt(req.params.id);
-      const { trigger, notes } = req.body;
-      const completion = await storage.completeResetRitual(ritualId, userId, trigger, notes);
+      const { trigger, cause, notes } = req.body;
+      const completion = await storage.completeResetRitual(ritualId, userId, trigger, cause, notes);
       res.json(completion);
     } catch (error) {
       console.error("Error completing reset ritual:", error);

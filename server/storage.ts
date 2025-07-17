@@ -89,7 +89,7 @@ export interface IStorage {
   // Reset ritual operations
   createResetRitual(ritual: InsertResetRitual): Promise<ResetRitual>;
   getUserResetRituals(userId: string): Promise<ResetRitual[]>;
-  completeResetRitual(ritualId: number, userId: string): Promise<ResetCompletion>;
+  completeResetRitual(ritualId: number, userId: string, trigger?: string, cause?: string, notes?: string): Promise<ResetCompletion>;
   
   // User preferences operations
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
@@ -553,13 +553,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(resetRituals.createdAt));
   }
 
-  async completeResetRitual(ritualId: number, userId: string, trigger?: string, notes?: string): Promise<ResetCompletion> {
+  async completeResetRitual(ritualId: number, userId: string, trigger?: string, cause?: string, notes?: string): Promise<ResetCompletion> {
     const [completion] = await db
       .insert(resetCompletions)
       .values({
         ritualId,
         userId,
         trigger: trigger || null,
+        cause: cause || null,
         notes: notes || null,
         completedAt: new Date(),
       })

@@ -159,6 +159,7 @@ export const resetRituals = pgTable("reset_rituals", {
   icon: varchar("icon").default("fas fa-spa"),
   duration: integer("duration"), // in minutes
   category: varchar("category").default("wellness"), // 'movement', 'breathing', 'wellness'
+  cause: varchar("cause"), // personal reason/pattern for why this ritual is needed
   isDefault: boolean("is_default").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -169,6 +170,7 @@ export const resetCompletions = pgTable("reset_completions", {
   ritualId: integer("ritual_id").notNull().references(() => resetRituals.id),
   userId: varchar("user_id").notNull().references(() => users.id),
   trigger: varchar("trigger"), // stress, overwhelmed, anxiety, tired, frustrated, etc.
+  cause: varchar("cause"), // specific reason for needing this reset (e.g., "work deadline pressure")
   notes: text("notes"), // optional notes about what caused the reset
   completedAt: timestamp("completed_at").defaultNow(),
 });
