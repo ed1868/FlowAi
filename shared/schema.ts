@@ -168,6 +168,8 @@ export const resetCompletions = pgTable("reset_completions", {
   id: serial("id").primaryKey(),
   ritualId: integer("ritual_id").notNull().references(() => resetRituals.id),
   userId: varchar("user_id").notNull().references(() => users.id),
+  trigger: varchar("trigger"), // stress, overwhelmed, anxiety, tired, frustrated, etc.
+  notes: text("notes"), // optional notes about what caused the reset
   completedAt: timestamp("completed_at").defaultNow(),
 });
 

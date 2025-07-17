@@ -500,16 +500,49 @@ export class MemStorage implements IStorage {
       .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
   }
 
-  async completeResetRitual(ritualId: number, userId: string): Promise<ResetCompletion> {
+  async completeResetRitual(ritualId: number, userId: string, trigger?: string, notes?: string): Promise<ResetCompletion> {
     const id = this.nextId++;
     const completion: ResetCompletion = {
       id,
       ritualId,
       userId,
+      trigger: trigger || null,
+      notes: notes || null,
       completedAt: new Date(),
     };
     this.resetCompletions.set(id, completion);
     return completion;
+  }
+
+  async deleteResetRitual(ritualId: number, userId: string): Promise<boolean> {
+    const ritual = Array.from(this.resetRituals.values())
+      .find(r => r.id === ritualId && r.userId === userId);
+    if (ritual) {
+      this.resetRituals.delete(ritualId);
+      return true;
+    }
+    return false;
+  }
+
+  async getResetHistory(userId: string): Promise<ResetCompletion[]> {
+    const completions = Array.from(this.resetCompletions.values())
+      .filter(completion => completion.userId === userId)
+      .map(completion => {
+        const ritual = this.resetRituals.get(completion.ritualId);
+        return {
+          ...completion,
+          ritual: ritual ? {
+            id: ritual.id,
+            name: ritual.name,
+            description: ritual.description,
+            icon: ritual.icon,
+            duration: ritual.duration,
+            category: ritual.category,
+          } : undefined
+        };
+      })
+      .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
+    return completions;
   }
 
   // User preferences operations

@@ -553,16 +553,49 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(resetRituals.createdAt));
   }
 
-  async completeResetRitual(ritualId: number, userId: string): Promise<ResetCompletion> {
+  async completeResetRitual(ritualId: number, userId: string, trigger?: string, notes?: string): Promise<ResetCompletion> {
     const [completion] = await db
       .insert(resetCompletions)
       .values({
         ritualId,
         userId,
+        trigger: trigger || null,
+        notes: notes || null,
         completedAt: new Date(),
       })
       .returning();
     return completion;
+  }
+
+  async deleteResetRitual(ritualId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(resetRituals)
+      .where(and(eq(resetRituals.id, ritualId), eq(resetRituals.userId, userId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getResetHistory(userId: string): Promise<ResetCompletion[]> {
+    return await db
+      .select({
+        id: resetCompletions.id,
+        ritualId: resetCompletions.ritualId,
+        userId: resetCompletions.userId,
+        trigger: resetCompletions.trigger,
+        notes: resetCompletions.notes,
+        completedAt: resetCompletions.completedAt,
+        ritual: {
+          id: resetRituals.id,
+          name: resetRituals.name,
+          description: resetRituals.description,
+          icon: resetRituals.icon,
+          duration: resetRituals.duration,
+          category: resetRituals.category,
+        }
+      })
+      .from(resetCompletions)
+      .leftJoin(resetRituals, eq(resetCompletions.ritualId, resetRituals.id))
+      .where(eq(resetCompletions.userId, userId))
+      .orderBy(desc(resetCompletions.completedAt));
   }
 
   // User preferences operations

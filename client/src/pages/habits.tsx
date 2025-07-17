@@ -57,6 +57,16 @@ interface ResetRitual {
   createdAt: string;
 }
 
+interface ResetCompletion {
+  id: number;
+  ritualId: number;
+  userId: string;
+  trigger?: string;
+  notes?: string;
+  completedAt: string;
+  ritual?: ResetRitual; // populated by join
+}
+
 const defaultHabits = [
   { name: "Morning Meditation", icon: "fas fa-om", color: "#34C759", category: "wellness" },
   { name: "Exercise", icon: "fas fa-dumbbell", color: "#FF9500", category: "fitness" },
@@ -67,12 +77,37 @@ const defaultHabits = [
 ];
 
 const defaultRituals = [
+  // Breathing
   { name: "Deep Breathing", icon: "fas fa-wind", duration: 5, category: "breathing", description: "4-7-8 breathing technique" },
+  { name: "Box Breathing", icon: "fas fa-square", duration: 3, category: "breathing", description: "4-4-4-4 breathing pattern" },
+  { name: "Meditation", icon: "fas fa-om", duration: 10, category: "breathing", description: "Mindful breathing session" },
+  
+  // Movement
   { name: "Quick Walk", icon: "fas fa-walking", duration: 10, category: "movement", description: "Fresh air break" },
   { name: "Neck Stretch", icon: "fas fa-arrows-alt", duration: 3, category: "movement", description: "Relieve tension" },
+  { name: "Shoulder Rolls", icon: "fas fa-sync-alt", duration: 2, category: "movement", description: "Release shoulder tension" },
+  { name: "Desk Yoga", icon: "fas fa-spa", duration: 8, category: "movement", description: "Chair-based stretches" },
+  { name: "Push-ups", icon: "fas fa-dumbbell", duration: 5, category: "movement", description: "Quick energy boost" },
+  
+  // Wellness
   { name: "Hydrate", icon: "fas fa-glass-water", duration: 1, category: "wellness", description: "Drink a glass of water" },
   { name: "Eye Rest", icon: "fas fa-eye", duration: 2, category: "wellness", description: "20-20-20 rule" },
   { name: "Energizing Music", icon: "fas fa-music", duration: 5, category: "wellness", description: "Listen to upbeat songs" },
+  { name: "Gratitude Moment", icon: "fas fa-heart", duration: 3, category: "wellness", description: "Think of 3 things you're grateful for" },
+  { name: "Power Nap", icon: "fas fa-bed", duration: 15, category: "wellness", description: "Quick energy restoration" },
+  
+  // Mental
+  { name: "Brain Dump", icon: "fas fa-pen-fancy", duration: 5, category: "mental", description: "Write down all thoughts" },
+  { name: "Priority Reset", icon: "fas fa-list-ol", duration: 3, category: "mental", description: "Reorganize your top 3 priorities" },
+  { name: "Visualization", icon: "fas fa-eye-slash", duration: 5, category: "mental", description: "Visualize success for 5 minutes" },
+  
+  // Social
+  { name: "Text a Friend", icon: "fas fa-comment", duration: 2, category: "social", description: "Send an encouraging message" },
+  { name: "Call Someone", icon: "fas fa-phone", duration: 5, category: "social", description: "Quick check-in call" },
+  
+  // Creative
+  { name: "Doodle Break", icon: "fas fa-paint-brush", duration: 5, category: "creative", description: "Free-form drawing" },
+  { name: "Voice Memo", icon: "fas fa-microphone", duration: 3, category: "creative", description: "Record your thoughts" },
 ];
 
 export default function Habits() {
@@ -117,6 +152,32 @@ export default function Habits() {
     duration: 5,
     category: "wellness",
   });
+
+  // Reset completion form state
+  const [resetCompletionForm, setResetCompletionForm] = useState({
+    trigger: "",
+    notes: "",
+  });
+
+  // New state for ritual management
+  const [isResetHistoryOpen, setIsResetHistoryOpen] = useState(false);
+  const [isCompleteRitualDialogOpen, setIsCompleteRitualDialogOpen] = useState(false);
+  const [selectedRitual, setSelectedRitual] = useState<ResetRitual | null>(null);
+
+  // Reset triggers
+  const resetTriggers = [
+    { value: "stress", label: "Stress", icon: "😰" },
+    { value: "overwhelmed", label: "Overwhelmed", icon: "🤯" },
+    { value: "anxiety", label: "Anxiety", icon: "😟" },
+    { value: "tired", label: "Tired", icon: "😴" },
+    { value: "frustrated", label: "Frustrated", icon: "😤" },
+    { value: "unfocused", label: "Unfocused", icon: "🌀" },
+    { value: "angry", label: "Angry", icon: "😡" },
+    { value: "sad", label: "Sad", icon: "😢" },
+    { value: "bored", label: "Bored", icon: "😑" },
+    { value: "restless", label: "Restless", icon: "🔄" },
+    { value: "other", label: "Other", icon: "🤔" },
+  ];
 
   // Struggle form state
   const [struggleForm, setStruggleForm] = useState({
@@ -252,6 +313,12 @@ export default function Habits() {
     enabled: isAuthenticated,
   });
 
+  // Get reset ritual history
+  const { data: resetHistory = [], isLoading: historyLoading } = useQuery<ResetCompletion[]>({
+    queryKey: ["/api/reset-history"],
+    enabled: isAuthenticated,
+  });
+
   // Get habit struggles for selected habit
   const { data: habitStruggles = [] } = useQuery({
     queryKey: ["/api/habits", habitToView?.id, "struggles"],
@@ -370,11 +437,18 @@ export default function Habits() {
 
   // Complete ritual mutation
   const completeRitualMutation = useMutation({
-    mutationFn: async (ritualId: number) => {
-      const response = await apiRequest("POST", `/api/reset-rituals/${ritualId}/complete`);
+    mutationFn: async ({ ritualId, trigger, notes }: { ritualId: number; trigger?: string; notes?: string }) => {
+      const response = await apiRequest("POST", `/api/reset-rituals/${ritualId}/complete`, {
+        trigger,
+        notes,
+      });
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reset-history"] });
+      setIsCompleteRitualDialogOpen(false);
+      setSelectedRitual(null);
+      setResetCompletionForm({ trigger: "", notes: "" });
       toast({
         title: "Ritual Completed! 🎉",
         description: "Great job taking care of yourself!",
@@ -395,6 +469,39 @@ export default function Habits() {
       toast({
         title: "Error",
         description: "Failed to complete ritual",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete ritual mutation
+  const deleteRitualMutation = useMutation({
+    mutationFn: async (ritualId: number) => {
+      const response = await apiRequest("DELETE", `/api/reset-rituals/${ritualId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reset-rituals"] });
+      toast({
+        title: "Ritual Deleted",
+        description: "The ritual has been removed from your collection.",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete ritual",
         variant: "destructive",
       });
     },
@@ -1015,7 +1122,7 @@ export default function Habits() {
                 <div className="space-y-4">
                   {rituals.length > 0 ? (
                     rituals.map((ritual) => (
-                      <div key={ritual.id} className="flex items-center justify-between p-4 glass-button rounded-xl">
+                      <div key={ritual.id} className="flex items-center justify-between p-4 glass-button rounded-xl group">
                         <div className="flex items-center space-x-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-apple-blue to-apple-indigo rounded-xl flex items-center justify-center">
                             <i className={`${ritual.icon} text-white`}></i>
@@ -1030,14 +1137,32 @@ export default function Habits() {
                             </Badge>
                           </div>
                         </div>
-                        <Button
-                          onClick={() => completeRitualMutation.mutate(ritual.id)}
-                          className="bg-apple-green hover:bg-apple-green/80 text-white"
-                          disabled={completeRitualMutation.isPending}
-                        >
-                          <i className="fas fa-check mr-2"></i>
-                          Complete
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => {
+                              setSelectedRitual(ritual);
+                              setIsCompleteRitualDialogOpen(true);
+                            }}
+                            className="bg-apple-green hover:bg-apple-green/80 text-white"
+                            disabled={completeRitualMutation.isPending}
+                          >
+                            <i className="fas fa-check mr-2"></i>
+                            Complete
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (window.confirm("Are you sure you want to delete this ritual?")) {
+                                deleteRitualMutation.mutate(ritual.id);
+                              }
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-text-tertiary hover:text-red-500"
+                            disabled={deleteRitualMutation.isPending}
+                          >
+                            <i className="fas fa-trash text-sm"></i>
+                          </Button>
+                        </div>
                       </div>
                     ))
                   ) : (
@@ -1079,6 +1204,66 @@ export default function Habits() {
                         </div>
                       </Button>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Reset Ritual History */}
+            {resetHistory.length > 0 && (
+              <Card className="glass-card rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <i className="fas fa-history text-apple-green"></i>
+                    Recent Reset History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {resetHistory.slice(0, 5).map((completion) => (
+                      <div key={completion.id} className="flex items-center justify-between p-3 glass-button rounded-xl">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-apple-green to-green-600 rounded-lg flex items-center justify-center">
+                            <i className={`${completion.ritual?.icon || 'fas fa-spa'} text-white text-sm`}></i>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-sm">{completion.ritual?.name || 'Deleted Ritual'}</h4>
+                            <div className="text-xs text-text-tertiary">
+                              {new Date(completion.completedAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                              {completion.trigger && (
+                                <span className="ml-2">
+                                  • {resetTriggers.find(t => t.value === completion.trigger)?.icon} {completion.trigger}
+                                </span>
+                              )}
+                            </div>
+                            {completion.notes && (
+                              <div className="text-xs text-text-secondary mt-1 italic">
+                                "{completion.notes}"
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-xs text-apple-green font-medium">
+                          ✓ Complete
+                        </div>
+                      </div>
+                    ))}
+                    {resetHistory.length > 5 && (
+                      <div className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-text-tertiary hover:text-text-primary"
+                        >
+                          View All ({resetHistory.length} total)
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1648,6 +1833,93 @@ export default function Habits() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Complete Ritual Dialog */}
+      <Dialog open={isCompleteRitualDialogOpen} onOpenChange={setIsCompleteRitualDialogOpen}>
+        <DialogContent className="glass-card border-none max-w-md">
+          <DialogHeader>
+            <DialogTitle className="gradient-text flex items-center gap-2">
+              <i className="fas fa-spa text-apple-green"></i>
+              Complete Reset Ritual
+            </DialogTitle>
+            <p className="text-text-secondary text-sm">
+              {selectedRitual?.name} • {selectedRitual?.duration} minutes
+            </p>
+          </DialogHeader>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (selectedRitual) {
+                completeRitualMutation.mutate({
+                  ritualId: selectedRitual.id,
+                  trigger: resetCompletionForm.trigger || undefined,
+                  notes: resetCompletionForm.notes || undefined,
+                });
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="text-sm text-text-secondary block mb-2">
+                What triggered this need? (Optional)
+              </label>
+              <Select 
+                value={resetCompletionForm.trigger} 
+                onValueChange={(value) => setResetCompletionForm(prev => ({ ...prev, trigger: value }))}
+              >
+                <SelectTrigger className="glass-button border-none">
+                  <SelectValue placeholder="Select a trigger..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {resetTriggers.map((trigger) => (
+                    <SelectItem key={trigger.value} value={trigger.value}>
+                      <div className="flex items-center gap-2">
+                        <span>{trigger.icon}</span>
+                        <span>{trigger.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm text-text-secondary block mb-2">
+                Any notes or reflections? (Optional)
+              </label>
+              <Textarea
+                placeholder="How did the ritual help? Any insights?"
+                value={resetCompletionForm.notes}
+                onChange={(e) => setResetCompletionForm(prev => ({ ...prev, notes: e.target.value }))}
+                className="glass-button border-none focus:ring-2 focus:ring-apple-green"
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                className="flex-1 bg-apple-green hover:bg-apple-green/80 text-white"
+                disabled={completeRitualMutation.isPending}
+              >
+                <i className="fas fa-check mr-2"></i>
+                {completeRitualMutation.isPending ? "Completing..." : "Complete Ritual"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsCompleteRitualDialogOpen(false);
+                  setSelectedRitual(null);
+                  setResetCompletionForm({ trigger: "", notes: "" });
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

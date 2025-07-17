@@ -787,11 +787,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const ritualId = parseInt(req.params.id);
-      const completion = await storage.completeResetRitual(ritualId, userId);
+      const { trigger, notes } = req.body;
+      const completion = await storage.completeResetRitual(ritualId, userId, trigger, notes);
       res.json(completion);
     } catch (error) {
       console.error("Error completing reset ritual:", error);
       res.status(400).json({ message: "Failed to complete reset ritual" });
+    }
+  });
+
+  // Delete reset ritual
+  app.delete('/api/reset-rituals/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const ritualId = parseInt(req.params.id);
+      await storage.deleteResetRitual(ritualId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting reset ritual:", error);
+      res.status(400).json({ message: "Failed to delete reset ritual" });
+    }
+  });
+
+  // Get reset ritual history
+  app.get('/api/reset-history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const history = await storage.getResetHistory(userId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching reset history:", error);
+      res.status(500).json({ message: "Failed to fetch reset history" });
     }
   });
 
